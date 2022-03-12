@@ -51,7 +51,11 @@ Department of Electrical Engineering and Computer Science \\
 \end{center}
 
 \begin{center}
-EECS151/251A - LB, \currentSemester
+\LARGE{
+\bf EECS151/251A, \currentSemester}
+\end{center}
+\begin{center}
+TA: Alisha Menon, Seah Kim, Yikuan Chen
 \end{center}
 
 \begin{center}
@@ -90,7 +94,9 @@ The following is a brief description of each checkpoint and approximately how ma
 \begin{itemize}
   \item \textbf{\blockDiagramDueDate \space - \blockDiagramTaskName \space (\blockDiagramTimeAlloted)} - Draw a schematic of your processor's datapath and pipeline stages, and provide a brief writeup of your answers to the questions in ~\ref{sec:chkpt1_questions}. In addition, push all of your IO-circuit Verilog modules that you have implemented in the labs to your assigned Github repository under \verb|hardware/src/io_circuits| (see ~\ref{sec:past_designs}). Also commit your design documents (block diagram + writeup) to \verb|docs|.
   \item \textbf{\baseCPUDueDate \space - \baseCPUTaskName \space (\baseCPUTimeAlloted)} - Implement a fully functional RISC-V processor core in Verilog. Your processor core should be able to run the \textbf{mmult} demo successfully.
-  \item \textbf{\imageDueDate \space - \imageTaskName \space (\imageTimeAlloted)} - Implement an IO memory-mapped hardware-accelerated Convolutional Neural Network for LeNet inference.
+  
+  %\item \textbf{\imageDueDate \space - \imageTaskName \space (\imageTimeAlloted)} - Implement an IO memory-mapped hardware-accelerated Convolutional Neural Network for LeNet inference.
+  
   \item \textbf{\finalCheckoffDueDate \space - Final Checkoff + Demo} - Final processor optimization and checkoff
   \item \textbf{\finalReportDueDate \space - Project Report} - Final report due
 \end{itemize}
@@ -827,621 +833,621 @@ Additionally, please find the maximum achievable frequency of your CPU implement
 
 \pagebreak
 
-\section{Checkpoint 3 - Hardware-Accelerated Convolutional Neural Network}
+% \section{Checkpoint 3 - Hardware-Accelerated Convolutional Neural Network}
 
-\subsection{Checkpoint Overview}
+% \subsection{Checkpoint Overview}
 
-\subsubsection{LeNet}
+% \subsubsection{LeNet}
 
-In this checkpoint, your task is to design and implement an optimized hardware accelerator to speed up the inference execution of a small Convolutional Neural Network (CNN). You will be comparing the performance of your accelerator against the CNN software implementation running on the RISC-V processor that you have implemented in Checkpoint 2. Our target CNN is the classic \href{http://yann.lecun.com/exdb/lenet/}{LeNet-5} network for handwritten digit classification. LeNet-5 is a feed-forward network that consists of 5 layers as shown in the following figure.
+% In this checkpoint, your task is to design and implement an optimized hardware accelerator to speed up the inference execution of a small Convolutional Neural Network (CNN). You will be comparing the performance of your accelerator against the CNN software implementation running on the RISC-V processor that you have implemented in Checkpoint 2. Our target CNN is the classic \href{http://yann.lecun.com/exdb/lenet/}{LeNet-5} network for handwritten digit classification. LeNet-5 is a feed-forward network that consists of 5 layers as shown in the following figure.
 
-\begin{center}
-\includegraphics[width=0.8\textwidth]{images/lenet.png}
-\end{center}
+% \begin{center}
+% \includegraphics[width=0.8\textwidth]{images/lenet.png}
+% \end{center}
 
-A rigorous understanding of deep neural networks is not required when you do this checkpoint, since we will provide the software model of the problem. Nonetheless, if you'd like to look at some introductory materials to get yourself acquainted with some Deep learning concepts, the \href{https://inst.eecs.berkeley.edu/~eecs151/sp21/files/EECS251Leture-JennyHuang_2021.pdf}{Deep Neural Networks Design and Examples} lecture or the lecture notes from \href{https://inst.eecs.berkeley.edu//~ee290-2/sp21/}{EE290-2} are good places to start.
+% A rigorous understanding of deep neural networks is not required when you do this checkpoint, since we will provide the software model of the problem. Nonetheless, if you'd like to look at some introductory materials to get yourself acquainted with some Deep learning concepts, the \href{https://inst.eecs.berkeley.edu/~eecs151/sp21/files/EECS251Leture-JennyHuang_2021.pdf}{Deep Neural Networks Design and Examples} lecture or the lecture notes from \href{https://inst.eecs.berkeley.edu//~ee290-2/sp21/}{EE290-2} are good places to start.
 
-Here are some key parameters of the network. We refer an input matrix to a layer as input feature map (IFM), and the output matrix of a layer as output feature map (OFM).
+% Here are some key parameters of the network. We refer an input matrix to a layer as input feature map (IFM), and the output matrix of a layer as output feature map (OFM).
 
-\begin{itemize}
-\item The first 3D Convolutional layer (conv3D): input feature map 1$\times$28$\times$28 (8-bit), weight 8$\times$1$\times$5$\times$5 (8-bit), output feature map 8$\times$24$\times$24 (32-bit)
-\item The first 2D Max Pooling layer (maxpool2D): input feature map 8$\times$2$\times$24 (32-bit), output feature map 8$\times$12$\times$12 (8-bit)
-\item The second 3D Convolutional layer: input feature map 8$\times$12$\times$12 (8-bit), weight 16$\times$8$\times$5$\times$5 (8-bit), output feature map 16$\times$8$\times$8 (32-bit)
-\item The second 2D Max Pooling layer: input feature map 16$\times$8$\times$8 (32-bit), output feature map 16$\times$4$\times$4 (8-bit)
-\item The Fully-Connected layer (fconn): input feature map 16$\times$4$\times$4 (8-bit), weight 10$\times$16$\times$4$\times$4 (8-bit), output feature map 10$\times$1$\times$1 (32-bit)
-\end{itemize}
+% \begin{itemize}
+% \item The first 3D Convolutional layer (conv3D): input feature map 1$\times$28$\times$28 (8-bit), weight 8$\times$1$\times$5$\times$5 (8-bit), output feature map 8$\times$24$\times$24 (32-bit)
+% \item The first 2D Max Pooling layer (maxpool2D): input feature map 8$\times$2$\times$24 (32-bit), output feature map 8$\times$12$\times$12 (8-bit)
+% \item The second 3D Convolutional layer: input feature map 8$\times$12$\times$12 (8-bit), weight 16$\times$8$\times$5$\times$5 (8-bit), output feature map 16$\times$8$\times$8 (32-bit)
+% \item The second 2D Max Pooling layer: input feature map 16$\times$8$\times$8 (32-bit), output feature map 16$\times$4$\times$4 (8-bit)
+% \item The Fully-Connected layer (fconn): input feature map 16$\times$4$\times$4 (8-bit), weight 10$\times$16$\times$4$\times$4 (8-bit), output feature map 10$\times$1$\times$1 (32-bit)
+% \end{itemize}
 
-The network is trained with the MNIST dataset to obtain the weight data for the two conv3D layers and fconn layers. The weights, initially in floating-point datatype, are then quantized to 8-bit signed integers (-128 to 127) to reduce the implementation complexity (no floating-point computation required) as well as make the network leaner and more FPGA-friendly. The general consensus is that the inference does not need a lot of bits to achieve competitive accuracy to full precision as opposed to the training process. The output feature maps of these layers are also quantized to 8-bit signed integers by being scaled down by a factor of 512 and clamped to within the range of -128 to 127. The quantization has negligible impact on the accuracy of the network (97\% on 10000 MNIST test images). This technique is called Post-training quantization. The Python script for training the network is adapted from the \href{https://drive.google.com/file/d/1LBtLjz2pdo6uj-E0aR69-ZGjmR9RBSDU/view}{Lab 1 material} of the course EE290-2.
+% The network is trained with the MNIST dataset to obtain the weight data for the two conv3D layers and fconn layers. The weights, initially in floating-point datatype, are then quantized to 8-bit signed integers (-128 to 127) to reduce the implementation complexity (no floating-point computation required) as well as make the network leaner and more FPGA-friendly. The general consensus is that the inference does not need a lot of bits to achieve competitive accuracy to full precision as opposed to the training process. The output feature maps of these layers are also quantized to 8-bit signed integers by being scaled down by a factor of 512 and clamped to within the range of -128 to 127. The quantization has negligible impact on the accuracy of the network (97\% on 10000 MNIST test images). This technique is called Post-training quantization. The Python script for training the network is adapted from the \href{https://drive.google.com/file/d/1LBtLjz2pdo6uj-E0aR69-ZGjmR9RBSDU/view}{Lab 1 material} of the course EE290-2.
 
-You might have noticed that the network is small enough that we could fit all the weight data of these layers on our PYNQ-Z1. This is not always possible for state-of-the-art neural networks. To make the problem more challenging and practical, the quantized weights, along with the 10000 quantized test images are initialized on the off-chip DRAM of the PYNQ-Z1 platform. Therefore, data won't simply be initialized in any on-chip Memory blocks and embedded in the bitstream as we've done so far, instead extra efforts must be done to bring the data closer to your computational units.
+% You might have noticed that the network is small enough that we could fit all the weight data of these layers on our PYNQ-Z1. This is not always possible for state-of-the-art neural networks. To make the problem more challenging and practical, the quantized weights, along with the 10000 quantized test images are initialized on the off-chip DRAM of the PYNQ-Z1 platform. Therefore, data won't simply be initialized in any on-chip Memory blocks and embedded in the bitstream as we've done so far, instead extra efforts must be done to bring the data closer to your computational units.
 
-This checkpoint gives you a different design problem from what was asked in checkpoint 2, since now you will need to build a specialized datapath for computation and memory buffering optimized specifically for this application. You are free to use any modules you like (memory blocks, FIFOs) for your design as long as everything is working correctly and faster than the baseline (naive) implementation. There is also no restriction on the amount of memory storage for your accelerator design.
+% This checkpoint gives you a different design problem from what was asked in checkpoint 2, since now you will need to build a specialized datapath for computation and memory buffering optimized specifically for this application. You are free to use any modules you like (memory blocks, FIFOs) for your design as long as everything is working correctly and faster than the baseline (naive) implementation. There is also no restriction on the amount of memory storage for your accelerator design.
 
-From the previous lab and homework execises, you have already had some practice on mapping an algorithmic description of a problem (e.g., loop forms) into a circuit implementation. To that end, this checkpoint furthers the complexity in terms of the number of loop levels and the amount of operations needed to carry out per loop iteration. How do a software loop iteration and a hardware cycle correlate? Would it be possible to map one or more software loop iterations to one hardware cycle? Can we overlap the operations of current loop iteration with the next one? Can we unroll the loops to achieve higher degree of parallelism? Can we partition a memory module such that we are not constrained by the number of available memory ports for parallel read/write? Bring all the design techniques that you have learned from the lectures with you, and see how far you can get with your accelerator design.
+% From the previous lab and homework execises, you have already had some practice on mapping an algorithmic description of a problem (e.g., loop forms) into a circuit implementation. To that end, this checkpoint furthers the complexity in terms of the number of loop levels and the amount of operations needed to carry out per loop iteration. How do a software loop iteration and a hardware cycle correlate? Would it be possible to map one or more software loop iterations to one hardware cycle? Can we overlap the operations of current loop iteration with the next one? Can we unroll the loops to achieve higher degree of parallelism? Can we partition a memory module such that we are not constrained by the number of available memory ports for parallel read/write? Bring all the design techniques that you have learned from the lectures with you, and see how far you can get with your accelerator design.
 
-\subsubsection{New files}
-Please do \textbf{git pull staff main} to get the latest updates for this checkpoint from the staff repository. Some new files have been added:
+% \subsubsection{New files}
+% Please do \textbf{git pull staff main} to get the latest updates for this checkpoint from the staff repository. Some new files have been added:
 
-\begin{itemize}
-\item \verb|hardware/src/z1top_axi.v|: New top-level module to integrate with the Zynq Processing System IP. We will use this top module from now on for the project.
-\item \verb|hardware/src/accelerator/xcel_naive.v|: An accelerator with a naive conv3D implementation. You will use this as the baseline.
-\item \verb|hardware/src/accelerator/xcel_naive_compute.v|: The compute unit of \verb|xcel_naive|. It implements a conv3D operation.
-\item \verb|hardware/src/accelerator/xcel_naive_memif.v|: The memory interface unit of \verb|xcel_naive|. It handles bus read/write to the DRAM and services the request/response from the compute unit.
-\item \verb|hardware/src/accelerator/xcel_opt.v|: A skeleton code for the optimized accelerator module. \textbf{Your task is to complete this file}.
-\item \verb|hardware/src/accelerator/axi_mm_adapter.v|: An AXI Memory-Mapped (MM) master adapter core for interfacing with the Zynq Processing System.
-\item \verb|hardware/src/accelerator/axi_mm_read.v|: A sub-component of the AXI MM adapter that implements the AXI read logic.
-\item \verb|hardware/src/accelerator/axi_mm_write.v|: A sub-component of the AXI MM adapter that implements the AXI write logic.
-\item \verb|hardware/src/accelerator/dma_controller.v|: A DMA (Direct-Memory Access) controller for interfacing with the off-chip DRAM and the RISC-V Data Memory (\texttt{DMem}) via the AXI adapter.
-\item \verb|hardware/src/accelerator/arbiter.v|: An arbiter for selecting which client (DMA or Accelerator) to service requests and responses to and from the off-chip DRAM.
-\item \verb|hardware/sim/xcel_testbench.v|: A testbench for verifying the functionality of the \verb|xcel| implementation. Only conv3D operation is tested.
-\item \verb|hardware/sim/conv3D_testbench.v|: A testbench for verifying the functionality of the compute unit \verb|xcel_naive_compute|. Only conv3D operation is tested.
-\item \verb|hardware/sim/mem_model.v|: A simple memory model that works with the \verb|xcel_testbench.v|.
-\item \verb|software/axi_test/*|: Software files for testing AXI communication (read and write).
-\item \verb|software/lenet/*|: Software files for the LeNet inference demo.
-\end{itemize}
+% \begin{itemize}
+% \item \verb|hardware/src/z1top_axi.v|: New top-level module to integrate with the Zynq Processing System IP. We will use this top module from now on for the project.
+% \item \verb|hardware/src/accelerator/xcel_naive.v|: An accelerator with a naive conv3D implementation. You will use this as the baseline.
+% \item \verb|hardware/src/accelerator/xcel_naive_compute.v|: The compute unit of \verb|xcel_naive|. It implements a conv3D operation.
+% \item \verb|hardware/src/accelerator/xcel_naive_memif.v|: The memory interface unit of \verb|xcel_naive|. It handles bus read/write to the DRAM and services the request/response from the compute unit.
+% \item \verb|hardware/src/accelerator/xcel_opt.v|: A skeleton code for the optimized accelerator module. \textbf{Your task is to complete this file}.
+% \item \verb|hardware/src/accelerator/axi_mm_adapter.v|: An AXI Memory-Mapped (MM) master adapter core for interfacing with the Zynq Processing System.
+% \item \verb|hardware/src/accelerator/axi_mm_read.v|: A sub-component of the AXI MM adapter that implements the AXI read logic.
+% \item \verb|hardware/src/accelerator/axi_mm_write.v|: A sub-component of the AXI MM adapter that implements the AXI write logic.
+% \item \verb|hardware/src/accelerator/dma_controller.v|: A DMA (Direct-Memory Access) controller for interfacing with the off-chip DRAM and the RISC-V Data Memory (\texttt{DMem}) via the AXI adapter.
+% \item \verb|hardware/src/accelerator/arbiter.v|: An arbiter for selecting which client (DMA or Accelerator) to service requests and responses to and from the off-chip DRAM.
+% \item \verb|hardware/sim/xcel_testbench.v|: A testbench for verifying the functionality of the \verb|xcel| implementation. Only conv3D operation is tested.
+% \item \verb|hardware/sim/conv3D_testbench.v|: A testbench for verifying the functionality of the compute unit \verb|xcel_naive_compute|. Only conv3D operation is tested.
+% \item \verb|hardware/sim/mem_model.v|: A simple memory model that works with the \verb|xcel_testbench.v|.
+% \item \verb|software/axi_test/*|: Software files for testing AXI communication (read and write).
+% \item \verb|software/lenet/*|: Software files for the LeNet inference demo.
+% \end{itemize}
 
-\subsubsection{High-level Overview of the Full System}
-The following figure depicts the overall picture of the full system.
+% \subsubsection{High-level Overview of the Full System}
+% The following figure depicts the overall picture of the full system.
 
-\begin{center}
-\includegraphics[width=0.5\textwidth]{images/full_system.png}
-\end{center}
+% \begin{center}
+% \includegraphics[width=0.5\textwidth]{images/full_system.png}
+% \end{center}
 
-The DMA Controller orchestrates the memory communication between the RISC-V's \texttt{DMem} and the off-chip DRAM. The AXI adapter receives a write or read request from either the DMA or the Accelerator, and submits the request to the off-chip DRAM through the Zynq Processing System. The arbiter implements a simple MUXing logic to service the request and response from the Accelerator if it is currently running, otherwise the DMA. Note that there is no direct memory transfer between the RISC-V and the Accelerator. All memory communication must go through the off-chip DRAM. For example, if the Accelerator wants to read some data from the RISC-V's \texttt{DMem} block, it must be first transferred to a memory location of the off-chip DRAM by the DMA, and the data can be accessed at the specified DRAM address by the read logic implemented inside the Accelerator. Similarly, any result data computed by the Accelerator must also be written to the DRAM before the RISC-V core can read it. The operations of the DMA and the Accelerator are controlled by the IO controller inside the Riscv151 core. To the Riscv151 core's perspective, they act as IO devices as similar to the UART modules.
+% The DMA Controller orchestrates the memory communication between the RISC-V's \texttt{DMem} and the off-chip DRAM. The AXI adapter receives a write or read request from either the DMA or the Accelerator, and submits the request to the off-chip DRAM through the Zynq Processing System. The arbiter implements a simple MUXing logic to service the request and response from the Accelerator if it is currently running, otherwise the DMA. Note that there is no direct memory transfer between the RISC-V and the Accelerator. All memory communication must go through the off-chip DRAM. For example, if the Accelerator wants to read some data from the RISC-V's \texttt{DMem} block, it must be first transferred to a memory location of the off-chip DRAM by the DMA, and the data can be accessed at the specified DRAM address by the read logic implemented inside the Accelerator. Similarly, any result data computed by the Accelerator must also be written to the DRAM before the RISC-V core can read it. The operations of the DMA and the Accelerator are controlled by the IO controller inside the Riscv151 core. To the Riscv151 core's perspective, they act as IO devices as similar to the UART modules.
 
-\subsubsection{ARM Baremetal Application}
+% \subsubsection{ARM Baremetal Application}
 
-A pre-compiled ARM binary is provided to initialize the off-chip DRAM with the weight, image, and label data.
+% A pre-compiled ARM binary is provided to initialize the off-chip DRAM with the weight, image, and label data.
 
-\begin{center}
-\includegraphics[width=0.2\textwidth]{images/ddr_layout.png}
-\end{center}
+% \begin{center}
+% \includegraphics[width=0.2\textwidth]{images/ddr_layout.png}
+% \end{center}
 
-You can take a look at the C source file \verb|arm_baremetal_app/system/helloworld.c| to see how things are set up. In order to compile this application, you will need to have access to a different Xilinx software (Vivado SDK). However, since the application is pre-compiled, you do not need to worry about this. You don't even need to touch any of the files in this submodule when doing the checkpoint. The addresses of the weight, image, and label data are statically allocated as shown in the DRAM memory layout figure above (only showing the data section). We will provide these addresses to the DMA Controller and the Accelerator so that they can access to the correct locations of the DRAM to get the data. Since ARM uses byte-level addressing scheme, a 32-bit read from the memory retrieves four consecutive 8-bit data items (e.g., weights).
+% You can take a look at the C source file \verb|arm_baremetal_app/system/helloworld.c| to see how things are set up. In order to compile this application, you will need to have access to a different Xilinx software (Vivado SDK). However, since the application is pre-compiled, you do not need to worry about this. You don't even need to touch any of the files in this submodule when doing the checkpoint. The addresses of the weight, image, and label data are statically allocated as shown in the DRAM memory layout figure above (only showing the data section). We will provide these addresses to the DMA Controller and the Accelerator so that they can access to the correct locations of the DRAM to get the data. Since ARM uses byte-level addressing scheme, a 32-bit read from the memory retrieves four consecutive 8-bit data items (e.g., weights).
 
-\subsection{Software Implementation}
+% \subsection{Software Implementation}
 
-This section provides the software description for the computational kernels found in our network: conv3D, maxpool2D, and fconn. You are not required to implement all these computational kernels in your accelerator, although you're welcome to do so. The bare minimum requirement is that you must accelerate the 3D Convolutional function as similar to the naive accelerator implementation given to you.
+% This section provides the software description for the computational kernels found in our network: conv3D, maxpool2D, and fconn. You are not required to implement all these computational kernels in your accelerator, although you're welcome to do so. The bare minimum requirement is that you must accelerate the 3D Convolutional function as similar to the naive accelerator implementation given to you.
 
-To keep things simple, your conv3D module is only required to handle convolution with a stride of 1 and no padding. Therefore, no boundary check is necessary. In addition, the weight dimension is passed as a parameter to the Verilog module (statically known). You're encourage to write your code in a parameterizable manner since it is a good coding practice (i.e., no assumption on the value of the weight dimension), but this is not strictly compulsory.
+% To keep things simple, your conv3D module is only required to handle convolution with a stride of 1 and no padding. Therefore, no boundary check is necessary. In addition, the weight dimension is passed as a parameter to the Verilog module (statically known). You're encourage to write your code in a parameterizable manner since it is a good coding practice (i.e., no assumption on the value of the weight dimension), but this is not strictly compulsory.
 
-\subsubsection{conv3D}
+% \subsubsection{conv3D}
 
-\begin{center}
-\includegraphics[width=0.5\textwidth]{images/conv3D.png}
-\end{center}
+% \begin{center}
+% \includegraphics[width=0.5\textwidth]{images/conv3D.png}
+% \end{center}
 
-\begin{minted}[fontsize=\footnotesize]{C}
-// Since the stride is 1 and no padding required, OFM_DIM = IFM_DIM - WT_DIM + 1
+% \begin{minted}[fontsize=\footnotesize]{C}
+% // Since the stride is 1 and no padding required, OFM_DIM = IFM_DIM - WT_DIM + 1
 
-#define OFM_SIZE  (OFM_DIM * OFM_DIM)
-#define IFM_SIZE  (IFM_DIM * IFM_DIM)
-#define WT_SIZE   (WT_DIM * WT_DIM)
-#define WT_VOLUME (IFM_DEPTH * WT_SIZE)
+% #define OFM_SIZE  (OFM_DIM * OFM_DIM)
+% #define IFM_SIZE  (IFM_DIM * IFM_DIM)
+% #define WT_SIZE   (WT_DIM * WT_DIM)
+% #define WT_VOLUME (IFM_DEPTH * WT_SIZE)
 
-for (f = 0; f < OFM_DEPTH; f++) {
+% for (f = 0; f < OFM_DEPTH; f++) {
 
-  for (i = 0; i < OFM_DIM; i++) {
-    for (j = 0; j < OFM_DIM; j++) {
-      ofm[f * OFM_SIZE + i * OFM_DIM + j] = 0;
-    }
-  }
+%   for (i = 0; i < OFM_DIM; i++) {
+%     for (j = 0; j < OFM_DIM; j++) {
+%       ofm[f * OFM_SIZE + i * OFM_DIM + j] = 0;
+%     }
+%   }
 
-  for (d = 0; d < IFM_DEPTH; d++) {
-    for (i = 0; i < OFM_DIM; i++) {
-      for (j = 0; j < OFM_DIM; j++) {
-        int32_t tmp = 0;
-        for (m = 0; m < WT_DIM; m++) {
-          for (n = 0; n < WT_DIM; n++) {
-            int32_t ifm_data = ifm[d * IFM_SIZE + (i + m) * IFM_DIM + (j + n)];
-            int32_t wt_data  = wt[f * WT_VOLUME + d * WT_SIZE + m * WT_DIM + n];
-            tmp += ifm_data * wt_data;
-          }
-        }
+%   for (d = 0; d < IFM_DEPTH; d++) {
+%     for (i = 0; i < OFM_DIM; i++) {
+%       for (j = 0; j < OFM_DIM; j++) {
+%         int32_t tmp = 0;
+%         for (m = 0; m < WT_DIM; m++) {
+%           for (n = 0; n < WT_DIM; n++) {
+%             int32_t ifm_data = ifm[d * IFM_SIZE + (i + m) * IFM_DIM + (j + n)];
+%             int32_t wt_data  = wt[f * WT_VOLUME + d * WT_SIZE + m * WT_DIM + n];
+%             tmp += ifm_data * wt_data;
+%           }
+%         }
 
-        ofm[f * OFM_SIZE + i * OFM_DIM + j] += tmp;
-      }
-    }
-  }
-}
+%         ofm[f * OFM_SIZE + i * OFM_DIM + j] += tmp;
+%       }
+%     }
+%   }
+% }
 
-\end{minted}
+% \end{minted}
+
+% \newpage
+% \subsubsection{maxpool2D}
+
+% \begin{minted}[fontsize=\footnotesize]{C}
+% #define OFM_DIM  (IFM_SIZE / 2)
+% #define OFM_SIZE (OFM_DIM * OFM_DIM)
+% #define IFM_SIZE (IFM_DIM * IFM_DIM)
+
+% for (f = 0; f < OFM_DEPTH; f++) {
+%   for (i = 0; i < OFM_DIM; i++) {
+%     for (j = 0; j < OFM_DIM; j++) {
+%       int8_t tmp0 = ifm[d * IFM_SIZE + (i*2+0) * IFM_DIM + (j*2+0)];
+%       int8_t tmp1 = ifm[d * IFM_SIZE + (i*2+1) * IFM_DIM + (j*2+0)];
+%       int8_t tmp2 = ifm[d * IFM_SIZE + (i*2+0) * IFM_DIM + (j*2+1)];
+%       int8_t tmp3 = ifm[d * IFM_SIZE + (i*2+1) * IFM_DIM + (j*2+1)];
+
+%       tmp0 = (tmp0 > 0) ? tmp0 : 0;
+%       tmp1 = (tmp1 > 0) ? tmp1 : 0;
+%       tmp2 = (tmp2 > 0) ? tmp2 : 0;
+%       tmp3 = (tmp3 > 0) ? tmp3 : 0;
+
+%       ofm[f * OFM_SIZE + i * OFM_DIM + j] = max(tmp0, tmp1, tmp2, tmp3);
+%     }
+%   }
+% }
+
+% \end{minted}
+
+% %\newpage
+% \subsubsection{fconn}
+
+% \begin{minted}[fontsize=\footnotesize]{C}
+% // In some sense, a fully-connected operation can also be view as conv3D
+% // with WT_DIM == IFM_DIM (and OFM_DIM = 1)
+
+% #define WT_DIM    (IFM_DIM)
+% #define IFM_SIZE  (IFM_DIM * IFM_DIM)
+% #define WT_SIZE   (WT_DIM * WT_DIM)
+% #define WT_VOLUME (IFM_DEPTH * WT_SIZE)
+
+% for (f = 0; f < OFM_DEPTH; f++) {
+%   int32_t tmp = 0;
+%   for (d = 0; d < IFM_DEPTH; d++) {
+%     for (i = 0; i < IFM_DIM; i++) {
+%       for (j = 0; j < IFM_DIM; j++) {
+%         int32_t ifm_data = ifm[d * IFM_SIZE + i * IFM_DIM + j];
+%         int32_t wt_data  = wt[f * WT_VOLUME + d * WT_SIZE + i * WT_DIM + j];
+%         tmp += ifm_data * wt_data;
+%       }
+%     }
+%   }
+%   ofm[f] += tmp;
+% }
+
+% \end{minted}
+
+% \newpage
+% \subsection{Naive conv3D: Sources of Inefficiency}
+
+% A straight mapping from a software description to a hardware implementation, without considering many inherent characteristics of the system (memory latency, buffering, available compute blocks, etc.), undoubtedly yields poor result. Have a look at the baseline conv3D implementation given to you: \verb|hardware/src/accelerator/xcel_naive.v|. There are a few weaknesses in this implementation.
+
+% \begin{itemize}
+% \item This implementation reads the elements of input feature map redundantly without considering the fact that there are some overlap between the current and the next sliding window (with a stride of 1). Therefore, the off-chip memory latency quickly overwhelms the performance and leaves the compute unit starving for data most of the time.
+% \item This implementation does not consider the fact that the weight and input feature map are 8-bit data, and that 4 weight/IFM items could be packed in a single read transfer at a time since our AXI data bus is 4 times wider. Instead, it issues 4 separate single read transfers for those consecutive weight/IFM data items. The redundancy adds extra communication overhead.
+% \item This implementation does not utilize burst mode to achieve better memory bandwidth utilization, especially since there are multiple data items in a row and one could set up a burst request to read them all in successive cycles with some intial startup overhead from the request to the response.
+% \item This implementation does not utilize any intermediate buffer to store the partial compute results on chip. Instead, the partial output channel result (OFM) is written back to the DRAM, and then read again to accumulate with the next result.
+% \item Per sliding window computation, the weight and the IFM data are preloaded into shift registers, then a single multiply-accumulation (MAC) operation is performed per cycle of the sliding window. However, one could also fully unroll this computation to use more MAC operations to compute a sliding window in a cycle with the trade-off of more hardware resource.
+% \item The FSM design serializes the execution and leaves small room to achieve pipelining or overlapping between memory fetching/writing and computation. The FSM embeds the mental model of the sequential software execution. Can we redesign or get rid of the FSM to achieve better pipelining execution of memory fetch/write and computation?
+% \end{itemize}
+
+% To build an efficient accelerator, one needs to not only understand how the software code works, but also be able to transform it to some form that is hardware-friendly in terms of memory access patterns, data reuses, and parallel executions. The topic of CNN acceleration has been extensively studied and explored, so we won't have any issues of finding some existing architecture to implement for the checkpoint. Nonetheless, you're also welcome to pursue your own ideas.
+
+% \subsection{AXI Bus Interface}
+
+% This section intends to provide you some background on the ARM's AMBA AXI bus interface.
+% AXI is a widely popular standard interface for establishing and standardizing the communication between many IP cores.
+% Our communication cores (DMA, Accelerator, AXI Adapter) adopt the AXI4 interface bus protocol.
+% There are separate read/write request and response channels.
+% Per each channel, a handshake mechanism (Ready/Valid) is used to indicate a successful transaction.
+
+% You can skim the official ARM's AXI specification \href{https://developer.arm.com/documentation/ihi0022/b}{here} for more information (chapter 2, 3, and 4).
+% The reading is entirely optional. The following subsections give a brief summary on the protocol and things that are particularly important for this checkpoint.
+% Additional resource is Xilinx \href{https://www.xilinx.com/support/documentation/ip\_documentation/ug761\_axi\_reference\_guide.pdf}{AXI Reference Guide}.
+
+% To reduce the design complexity, our AXI data bus width is set to 32-bit to match with the data word width of the RISC-V processor. And similar to our processor core, the Zynq PS uses byte-level addressing. A read from a DRAM memory location retrieves 4 consecutive bytes on the data bus. Likewise, a write to a memory location will update all 4 bytes. There's also a write strobe signal to set which byte lane(s) of the data bus to write to the memory.
+
+% The AXI read/write logic to interface with the Zynq PS is provided to you:
+
+% \verb|hardware/src/accelerator/axi_mm_adapter.v|.
+
+% One of your responsibilities in \verb|hardware/src/accelerator/xcel_opt.v| is to figure out how to set up the read and write interface channels to the AXI Adapter core so that your accelerator can read or write data correctly from and to the off-chip DRAM.
+
+% \subsubsection{Read Interface Channels}
+
+% \textbf{1. Read Address Request channel}
+% \begin{itemize}
+% \item \textbf{araddr}: Memory read request address (output)
+% \item \textbf{arvalid}: Memory read request address valid signal (output)
+% \item \textbf{arready}: Memory read request address ready signal (input)
+% \item \textbf{arlen}: Memory read burst length (output): the number of data transfers per read transaction (offset by 1).
+% \item \textbf{arsize}: Memory read burst size (output): the number of bytes per data transfer (log based 2).
+% \item \textbf{arburst}: Memory read burst type (output). Set to \textit{INCREMENT} so that the bus receives successive data items in a row.
+% \end{itemize}
+
+% \textbf{2. Read Data Response channel}
+% \begin{itemize}
+% \item \textbf{rdata}: Memory read response data (input)
+% \item \textbf{rvalid}: Memory read response data valid signal (input)
+% \item \textbf{rready}: Memory read response data ready signal (output)
+% \item \textbf{rlast}: Memory read response data last signal (input). Stays HIGH on the last data transfer.
+% \end{itemize}
+
+% Figure ~\ref{fig:axi_read} demonstrates an example of an AXI read transaction.
+% A read request is submitted, and a burst of 4 data beats are sent to the read response data channel.
+
+% Figure ~\ref{fig:axi_read_burst} shows the timings of the relevant AXI signals on a read transaction. Note how handshake is used to indicate when we have a fired request or response data (valid and ready are both HIGH at a rising clock edge).
+
+% \begin{figure}[hbt]
+% \begin{center}
+%   \includegraphics[width=0.6\textwidth]{axi_read.png}
+%   \caption{An AXI read transaction. Source: \href{https://developer.arm.com/documentation/ihi0022/b}{AXI Spec}}
+%   \label{fig:axi_read}
+% \end{center}
+% \end{figure}
+
+% \begin{figure}[hbt]
+% \begin{center}
+%   \includegraphics[width=0.6\textwidth]{axi_read_burst.png}
+%   \caption{An AXI read burst timing diagram. Source: \href{https://developer.arm.com/documentation/ihi0022/b}{AXI Spec}}
+%   \label{fig:axi_read_burst}
+% \end{center}
+% \end{figure}
+
+% \subsubsection{Write Interface Channels}
+
+% \textbf{1. Write Address Request channel}
+% \begin{itemize}
+% \item \textbf{awaddr}: Memory write request address (output)
+% \item \textbf{awvalid}: Memory write request address valid signal (output)
+% \item \textbf{awready}: Memory write request address ready signal (output)
+% \item \textbf{awlen}: Memory write burst length (output): the number of data transfers per read transaction (offset by 1).
+% \item \textbf{awsize}: Memory write burst size (output): the number of bytes per data transfer (log based 2).
+% \item \textbf{awburst}: Memory write burst type (output). Set to \textit{INCREMENT} so that the bus receives successive data items in a row.
+% \end{itemize}
+
+% \textbf{2. Write Data Request channel}
+% \begin{itemize}
+% \item \textbf{wdata}: Memory write request data (output)
+% \item \textbf{wvalid}: Memory write request data valid (output)
+% \item \textbf{wready}: Memory write request data ready (input)
+% \item \textbf{wlast}: Memory write request data last (output). Set to HIGH on the last write data transfer.
+% \item \textbf{wstrb}: Memory write request data strobe (output). Set to 4'b1111 if writing the full word to the DRAM memory.
+% \end{itemize}
+
+% \textbf{3. Write Response channel}
+% \begin{itemize}
+% \item \textbf{bresp}: Memory write response (input). The value \textit{RESP\_OKAY} (4'b0000) indicates a write sucess.
+% \item \textbf{bvalid}: Memory write response valid signal (input)
+% \item \textbf{bready}: Memory write response ready signal (output)
+% \end{itemize}
+
+% Figure ~\ref{fig:axi_write} demonstrates an example of an AXI write transaction.
+% A write request is submitted, and a burst of 4 data beats are sent to the write data channel.
+
+% Figure ~\ref{fig:axi_write_burst} shows the timings of the relevant AXI signals on a write transaction. Also note how handshake is used to indicate when we have a fired request or response.
+
+% \begin{figure}[hbt]
+% \begin{center}
+%   \includegraphics[width=0.6\textwidth]{axi_write.png}
+%   \caption{An AXI write transaction. Source: \href{https://developer.arm.com/documentation/ihi0022/b}{AXI Spec}}
+%   \label{fig:axi_write}
+% \end{center}
+% \end{figure}
+
+% \begin{figure}[hbt]
+% \begin{center}
+%   \includegraphics[width=0.6\textwidth]{axi_write_burst.png}
+%   \caption{An AXI write burst timing diagram. Source: \href{https://developer.arm.com/documentation/ihi0022/b}{AXI Spec}}
+%   \label{fig:axi_write_burst}
+% \end{center}
+% \end{figure}
+
+% \newpage
+% \subsection{Vivado Block Design with Zynq Processing System (PS)}
+
+% \begin{figure}[hbt]
+% \begin{center}
+%   \includegraphics[width=0.7\textwidth]{images/vivado_bd_z1top_axi.png}
+%   \caption{The Block Design of z1top\_axi module with the Zynq PS}
+%   \label{fig:z1top_axi}
+% \end{center}
+% \end{figure}
+
+% Figure ~\ref{fig:z1top_axi} shows the Block design of the full system after running the following command.
+
+% \begin{minted}{bash}
+% make build-project proj=z1top_axi
+% \end{minted}
+
+% Our \verb|z1top_axi.v| communicates with the Zynq PS through the AXI SmartConnect IP using the AXI4 bus interface. The Zynq PS also serves as a memory controller to the off-chip DRAM. Therefore, the only way for a module implemented in the Programmable Logic (PL) to access to the DRAM is through the Zynq PS. A High Performance AXI port (HP0) is used to communicate with the PL. The Zynq PS can be configured to use up to 4 HPs (HP0-3) to increase the memory bandwidth. For the sake of simplicity, we only use one HP port.
+
+% Also note that the Zynq PS supplies the clock signal \verb|FCLK_CLK0| to the fabric modules. To avoid extra timing complexity concerning with multi-clock domains, we will not use our usual \verb|CLK_FPGA_125MHZ|, but rather rely on the clock signal from the PS to clock the synchronous logic of our implementation.
+
+% If you are curious as how to build the project manually with the GUI, refer to the Appendix \ref{sec:vivado_bd} for the details.
+
+% \subsection{System Integration with Riscv151}
+% \subsubsection{Memory-mapped IO (MMIO) Registers of the DMA Controller and the Accelerator}
+
+% You will need to extend your IO memory-mapped logic to integrate the DMA controller and the Accelerator (xcel) cores to Riscv151. We will use the load and store instructions to the memory-mapped IO registers as a mechanism to control (start) or check the status of these IO modules (idle, done) as similar to how we have done it with the UART modules in Checkpoint 2. The done signal should be kept HIGH once the \texttt{dma} or \texttt{xcel} finishes, since a software code will keep polling on this signal (busy-waiting) before moving to the next part of the program. In addition, we introduce additional memory-mapped registers to set various address offsets so that the cores know where to access the correct data in any memory devices (DRAM or \texttt{DMem}). This is a neat approach to avoid hard-coding the addresses or recompiling the whole bitstream everytime we change the memory layout of the software/application code. The input/output feature map dimension and depth can also be set in software code.
+
+% The addresses of the MMIO registers are defined in \verb|software/151_library/memory_map.h|.
+
+% \begin{table}[hbt]
+%   \begin{center}
+%     \caption{MMIO addresses for the DMA Controller and the Accelerator}
+%     \label{mem_map_dma_xcel}
+%     \begin{adjustbox}{width=\columnwidth,center}
+%     \begin{tabular}{l l l l}
+%       \toprule
+%       \textbf{Address} & \textbf{Function} & \textbf{Access} & \textbf{Data Encoding}\\
+%       \midrule
+%       \verb|32'h80000030| & dma control (start) & Write & N/A \\
+%       \verb|32'h80000034| & dma status & Read & \verb|{30'b0, idle, done}| \\
+%       \verb|32'h80000038| & dma direction (1: \texttt{DMem} to DRAM, 0: DRAM to \texttt{DMem}) & Write & \verb|{31'b0, direction}| \\
+%       \verb|32'h8000003c| & dma source address & Write & DMA source address (32-bit) \\
+%       \verb|32'h80000040| & dma destination address & Write & DMA destination address (32-bit) \\
+%       \verb|32'h80000044| & dma transfer length (per 4 bytes) & Write & DMA transfer length (32-bit) \\
+%       \verb|32'h80000050| & xcel control (start) & Write & N/A \\
+%       \verb|32'h80000054| & xcel status & Read & \verb|{30'b0, idle, done}| \\
+%       \verb|32'h80000058| & xcel input feature map DRAM address & Write & IFM DRAM address (32-bit) \\
+%       \verb|32'h8000005c| & xcel weight DRAM address & Write & WT DRAM address (32-bit) \\
+%       \verb|32'h80000060| & xcel output feature map DRAM address & Write & OFM DRAM address (32-bit) \\
+%       \verb|32'h80000064| & xcel input feature map dimension & Write & IFM dimension value (32-bit) \\
+%       \verb|32'h80000068| & xcel input feature map depth (number of channels) & Write & IFM depth value (32-bit) \\
+%       \verb|32'h8000006c| & xcel output feature map dimension & Write & OFM dimension value (32-bit) \\
+%       \verb|32'h80000070| & xcel output feature map depth (number of channels) & Write & OFM depth value (32-bit) \\
+%       \bottomrule
+%     \end{tabular}
+%     \end{adjustbox}
+%   \end{center}
+% \end{table}
+
+
+% \subsubsection{Integrating DMA Controller with CPU Data Memory}
+
+% You might have already noticed that this system would not work with the current setting of Riscv151 in that \texttt{DMem} is a single-port memory block. In addition, port a is currently being used for the CPU load and store instructions. We would need to do the following steps to integrate the DMA Controller safely to the existing system.
+
+% \begin{itemize}
+% \item Use a dual-port memory template for \texttt{DMem} (look at \texttt{IMem} as an example)
+% \item Connect port b of \texttt{DMem} to the Memory interface of the DMA Controller (via Riscv151).
+% \end{itemize}
+
+% This will enable the DMA Controller to have access to the Data Memory.
+
+% \subsection{LeNet Demo software code}
+
+% The FPGA demo of this checkpoint is to run the software code \verb|software/lenet| on your RISC-V processor. The demo runs the LeNet inference to perform handwritten digit classification of the first 128 test images from the MNIST dataset. The demo can be compiled to run with either software flow (running the entire LeNet on the RISC-V) or the hardware-software partition/hybrid flow (executing the two conv3D layers on the accelerator, and the rest of the LeNet on RISC-V). In the software flow, the DRAM-read DMA operations are carried out to first fetch all the weight data to \texttt{DMem} of the RISC-V core. A test image is also fetched from the DRAM to \texttt{DMem} before running the network. The output feature map results of each layer are written to the arrays allocated in \texttt{DMem} and read by the next layer. Our \texttt{DMem} is large enough to hold the weights and the OFM results of the layers in addition to a single test image.
+
+% The hardware/software partition flow, on the other hand, performs the conv3D operation in the hardware accelerator (\texttt{xcel}). By supplying the weight and image addresses in the DRAM, the accelerator knows where to get the data and performs its computation. The output feature map result is written back to the DRAM at an address specified in software (e.g., \verb|0x00900000|). The data is then read by the DMA to \texttt{DMem} since the Max Pooling layers are executed on RISC-V.
+
+% \begin{center}
+% \includegraphics[width=0.7\textwidth]{images/lenet_hybrid_flow.png}
+% \end{center}
+
+% In practice, you could implement an accelerator that computes all the layers with intermediate buffers to store the OFMs, so that no DMA operation is needed to copy data back-and-forth between the DRAM and \texttt{DMem}, therefore reducing the number of off-chip memory accesses. Please feel free to change the hardware/software partition flow in accordance with your accelerator design and implementation.
+
+% \newpage
+% \subsection{Steps to Complete Checkpoint 3}
+
+% First, get the latest changes from the project skeleton repo
+
+% \begin{minted}{bash}
+% git pull staff main
+% git submodule update --init --recursive
+% \end{minted}
+
+% This will clone the \verb|arm_baremetal_app| submodule.
+
+% The next step is integrating the \texttt{dma\_controller} and \texttt{xcel\_naive} to your existing Riscv151 processor.
+% First, you need to modify the interface of \verb|hardware/src/riscv_core/Riscv151.v| to include some additional input/output ports to connect to the DMA controller and the Accelerator as follows.
+
+% \newpage
+% \begin{minted}[fontsize=\footnotesize]{Verilog}
+% module Riscv151 #(
+%   parameter CPU_CLOCK_FREQ = 50_000_000,
+%   parameter RESET_PC       = 32'h4000_0000,
+%   parameter BAUD_RATE      = 115200,
+%   parameter BIOS_MIF_HEX   = "bios151v3.mif"
+% ) (
+%   input  clk,
+%   input  rst,
+%   input  FPGA_SERIAL_RX,
+%   output FPGA_SERIAL_TX,
+%   output [31:0] csr,
+
+%   // Accelerator Interfacing
+%   output xcel_start,
+%   input xcel_done,
+%   input xcel_idle,
+
+%   output [31:0] ifm_ddr_addr,
+%   output [31:0] wt_ddr_addr,
+%   output [31:0] ofm_ddr_addr,
+
+%   output [31:0] ifm_dim,
+%   output [31:0] ifm_depth,
+
+%   output [31:0] ofm_dim,
+%   output [31:0] ofm_depth,
+
+%   // DMA Interfacing
+%   output dma_start,
+%   input  dma_done,
+%   input  dma_idle,
+%   output dma_dir,
+%   output [31:0] dma_src_addr,
+%   output [31:0] dma_dst_addr,
+%   output [31:0] dma_len,
+
+%   // DMem Interfacing (Port b)
+%   input  [13:0] dmem_addrb,
+%   input  [31:0] dmem_dinb,
+%   output [31:0] dmem_doutb,
+%   input  [3:0]  dmem_web,
+%   input         dmem_enb
+% );
+% \end{minted}
+
+% You need to expand your IO memory-mapped logic to perform load/store to the memory addresses of these IO modules as mentioned in the section above,
+% so that the CPU can control them from software. In addition, you will also need to convert \texttt{DMem} to dual-port memory block.
+% Use \texttt{port b} to connect to the \texttt{dma\_controller} via the interface of the Riscv151 processor.
+% Don't forget to wire the enable port of \texttt{DMem} to \texttt{dmem\_enb} from the interface.
+% Also note that we're no longer using \verb|hardware/src/z1top.v| for this checkpoint, but \verb|hardware/src/z1top_axi.v| instead.
+
+% Once you finish the integration, don't forget to rerun the simulation of all the tests from Checkpoint 2 to make sure that the new changes don't accidentally introduce bugs to your processor.
+
+% Next, generate a bitstream to configure your FPGA. Now you can pass the target clock frequency to the command.
+
+% \begin{minted}{bash}
+% # This command will implement and generate bitstream
+% # for the z1top_axi module and set the clock period to 20ns
+% make write-bitstream proj=z1top_axi clk=20
+% \end{minted}
+
+% Next, before programming the FPGA, you need to run the following script to initialize the Zynq PS (init the clock signal and the DRAM).
+
+% \begin{minted}{bash}
+% # If you are programming the FPGA from a lab machine with the Hardware Server,
+% # make sure that you update the port number in
+% # hardware/scripts/init_arm.tcl to your assigned port number.
+% # This script only needs to run once when you first turn on the board,
+% # or when your bitstream is implemented with a new clock period
+% make init-arm
+
+% # Program the board
+% make program-fpga bs=bitstream_files/z1top_axi.bit
+% \end{minted}
+
+% Next, test the DRAM communication with your Riscv151 to verify that you have integrated the DMA correctly. There is a software program for that \verb|software/axi_test|. Run the program using the same command as in \texttt{mmult} case. Alternatively, you can do
+
+% \begin{minted}{bash}
+% cd software/axi_test
+% make run
+% \end{minted}
+
+% Next, open the screen program as usual, then do \verb|jal 10000000|.
+
+% This program sends an array allocated in \texttt{DMem} of your RISC-V core to a memory location in the DRAM (DMA write operation), and reads from that memory location (DMA read operation) and writes the result to a different array in \texttt{DMem}. There should not be any mismatches between the two arrays once the DMA finishes. Try testing with different transfer lengths or addresses.
+
+% If the DMA is working, you can move on to the next part, which is to run the LeNet software. Go to \verb|software/lenet|, and run the program as follows.
+
+% \begin{minted}{bash}
+% # This will compile and run the hardware implementation of LeNet (only conv3D is
+% # put in hardware)
+% make clean && make xcel=HW
+% make run
+% # This will compile and run the software implementation of LeNet
+% make clean && make
+% make run
+
+% # You can also use the hex_to_serial script to load the generate MIF file
+% # to the UART as in the mmult demo
+
+% \end{minted}
+
+% Open screen and then do \verb|jal 10000000| to execute the program.
+% The program tests 128 images with 127 correct predictions (\verb|0x0000007f|).
+% The failed prediction is at the image \verb|0x00000073| with a prediction of 9
+% while the groundtruth is 4. The groundtruth labels can be checked \href{https://github.com/EECS150/arm_baremetal_app/blob/main/system/src/labels.h}{here}.
+
+% You can also test with fewer images (change the macro \verb|NUM_TEST_IMAGES| in \verb|lenet.c|) to make the program run a little faster.
+
+% Once you get a sense of how the entire flow works, it's time to code your own accelerator!
+% You can use the naive code as a starting point, but please feel free to write your own code for everything.
+% Add your own implementation to \verb|xcel_opt.v|, then replace the naive module with the opt module
+% in \verb|z1top_axi.v|.
+
+% \subsection{Resources and Suggestions for Accelerator design}
+
+% You are encouraged to visit the \href{http://eyeriss.mit.edu/tutorial.html}{MIT DNN Eyeriss tutorial} for ideas on how to build the accelerator for the 3D Convolution operation or CNN in general. The DNN Accelerators slides: \href{http://www.rle.mit.edu/eems/wp-content/uploads/2019/06/Tutorial-on-DNN-05-DNN-Accelerator-Architectures.pdf}{Part 1} and \href{http://www.rle.mit.edu/eems/wp-content/uploads/2019/06/Tutorial-on-DNN-06-RS-Dataflow-and-NoC.pdf}{Part 2} are particularly informative and might be useful for you as a starting point (check the \textit{Row-stationary architecture}).
+
+% You can also design a conv2D accelerator and augment it to compute 3D Convolution. As an example, the conv2D engine shown in the following figure fully unrolls the sliding-window computation kernel. Each Processing Element (PE) holds one row of a weight channel in a shift register, and performs a conv1D operation with a row fetched from the IFM, then buffers the result to a FIFO in order to accumulate with the result computed by the next PE. The general idea is that a conv2D operation can be accomplished by doing a conv1D operation separately on each row of a weight channel, then accumulate the result. The final accumulated value is written to the OFM buffer. This convolution architecture achieves two primary optimizations: i) \textbf{parallelization} due to unrolling -- the PEs compute their own conv1D concurrently without any synchronization overhead due to the use of intermediate FIFO buffers; ii) \textbf{data reuse} -- the weight data is reused throughout one conv2D execution, and an IFM data item is only fetched and used once across all the PE, therefore, no redundant data is read from the memory. This architecture is also suitable for streaming execution which the input to the engine can be a FIFO buffer or any streaming interface.
+
+% \begin{center}
+% \includegraphics[width=0.7\textwidth]{images/conv2D_engine.png}
+% \end{center}
+
+% On the performance estimation, barring a few cycles due to the overhead of filling the shift registers (both IFM and WT) at the beginning or when transitioning from one row to the next, the engine should be able to complete one OFM (partial) channel (or conv2D) in roughly \verb|OFM_SIZE| cycles. One could as well instantiates multiple conv2D engines to compute more OFM (partial) channels in parallel.
+
+% The slides \href{https://drive.google.com/file/d/1SJ6eUK9qJZXzZpeHY_D31d1M95nZMTjR/view?usp=sharing}{\textbf{here}} shows some detailed cycle-by-cycle operations of the engine and might be able to give you some ideas to get started.
+
+% Alternatively, start with something simple that works first, then worry about optimization later. It makes sense to just copy all the weight data and a test image to on-chip BRAM before you start doing the computatation. Buffering the temporary result to another local buffer, and only writing back to the DRAM once everything is done. Using burst mode is highly recommended. As a reference, you can take a look at the code in \verb|hardware/src/accelerator/dma_controller.v| to see some examples of how to setup a burst read/write request, and then how to convert the AXI interface to the RAM interface (i.e., \verb|addr|, \verb|din|, \verb|dout|, \verb|we|) and vice versa. You could do something similar to that in your accelerator. When implementing the bus read/write logic, adopt good practice when it comes to handshake: don't wire ready to valid or vice versa. Another good practice is to modularize the design to two modules as similar to the naive implementation: compute unit and memory interface unit. The memory interface unit handles reading and writing data to the DRAM, while the compute unit performs some computation (e.g., conv3D). For the compute unit, simplify the interface (e.g., RAM interface) so that it allows you to concentrate on implementing and testing the functionality of the computation core.
+
+% Once you have the data on chip, the low-hanging fruit is doing some unrolling or pipelining for parallel execution. Make use of dual-port memory modules to allow you to have more parallel accesses. In addition, try not to use a monolithic memory for everything, but instead split it to smaller modules and assign one for each compute unit.
+
+% As an additional tip for debugging, you can take advantage of Vivado Integrated Logic Analyzer, especially when you debug your AXI read and write logic in your accelerator design. Check the Appendix \ref{sec:vivado_ila} for more detail. Nonetheless, don't rely too much on ILA since it would add extra time to the already arduous Place-and-Route process. The best way to debug is still writing your own testbenches and doing RTL simulation before you run Vivado implementation. A testbench for conv3D has been provided to you. Please feel free to use or change the testbench as you see fit.
+
+% \begin{minted}{bash}
+% cd hardware
+% make iverilog-sim tb=xcel_testbench
+% \end{minted}
+
+% The testbench does not invoke any software MIF file nor the RISC-V core that you designed in Checkpoint 2. Rather, it tests the functionality of the xcel accelerator (conv3D) with a simple \verb|hardware/sim/mem_model.v| in place. A memory block is instantiated in the memory model to initialize data for testing. There's also another testbench that verifies the functionality of the compute unit only (excluding the memory interface logic). You may want to use these testbenches when you design and implement your optimized \verb|xcel| module. Start by implementing a compute module that passes \verb|conv3D_testbench| first, then add a memory interface module to handle bus read/write logic, and finally put everything together to test with \verb|xcel_testbench|. Please feel free to modify these testbenches to fit your own needs.
+
+% \begin{minted}{bash}
+% cd hardware
+% make iverilog-sim tb=conv3D_testbench
+% \end{minted}
+
+% If you would like to start from the naive version, you could try optimizing one unit at a time so that it becomes less overwhelming when you implement and debug your design. For example, start with the naive memory unit module: add burst mode or local memory buffers for memory optimization. Keep the naive compute unit module intact, then simulate with the \verb|xcel_testbench|, and test on the board to verify that your memory optimization works correctly. Once you're confident about your optimized memory unit, the next step is optimizing the compute unit. The decoupled or handshake interface between the given compute and the memory modules, as illustrated in the following figure, allows us to modularize the accelerator design to focus on doing and testing one thing at a time, which to a greater extent help ease the debugging effort. Note that, here \verb|addr| and \verb|ready| are used to signify a memory read equest from the compute unit to the memory interface unit, while \verb|dout| along with \verb|valid| are the memory read response from the memory interface unit to the compute module. On the other hand, \verb|din|, \verb|addr|, and \verb|valid| combines to a memory write request to the memory interface module.
+
+% \begin{center}
+% \includegraphics[width=0.3\textwidth]{images/compute_memif.png}
+% \end{center}
+
+% Once you have everything working, you can further simplify your implementation by removing the handshake mechanism if your compute unit only retrieves or writes data to some local buffers whose the access latency is statically known.
+
+% Regarding the choices of buffers for memory optimization, you may use your own FIFO modules, or \verb|ASYNC_RAM| / \verb|SYNC_RAM| module templates from \verb|hardware/src/EECS151.v| depending on your implementation. However, recall in Lab 3 and lectures, an \verb|ASYNC_RAM| gets mapped to the LUTRAM, while a \verb|SYNC_RAM| is synthesized to BRAM on the FPGA. Typically, LUTRAMs makes sense for implementing small data storage such as a $32\times32$ Register File in your RISC-V processor. At a greater scale and density, a BRAM would be a more appropriate choice and would help your design achieve much better QoR in terms of area and maximum achievable frequency. Note that on our PYNQ-Z1 platform, there are 17400$\times$64b LUTRAM cells in total, while the number of 36Kb BRAM cells is 140. You should do the calculation and budget your memory allocation appropriately to make sure that your design can accommodate the amount of data that you decide to fetch from the DRAM to on-chip storage.
+
+% When doing on-board testing (running the LeNet code on your FPGA), you may want to use the checksum functions (\verb|checksum_i32()| and \verb|checksum_i8()| in \verb|software/lenet/lenet.c|) to verify if your implementation works correctly (similar to \texttt{mmult} case). Set \textit{NUM\_TEST\_IMAGES} to 1 to test with only the first image. The prediction result is 7, and below are the checksums of the OFM returned by each layer
+
+% \begin{itemize}
+% \item conv1\_ofm: \verb|0x005a3760| (calculated with \verb|checksum_i32()|)
+% \item pool1\_ofm: \verb|0x00002d6b| (calculated with \verb|checksum_i8()|)
+% \item conv2\_ofm: \verb|0xff41b202| (calculated with \verb|checksum_i32()|)
+% \item pool2\_ofm: \verb|0x00001451| (calculated with \verb|checksum_i8()|)
+% \item fc\_ofm: \verb|0xffffa09a| (calculated with \verb|checksum_i32()|)
+% \end{itemize}
+
+% Here is an example of how to calculate the checksum of the OFM result computed by the first conv3D layer.
+
+% \newpage
+% \begin{minted}{C}
+% // Perform conv3D on the accelerator
+% // Write the OFM result to DDR at address 0x90_0000
+% conv3D_hw(IMAGES_DDR_ADDR + i * IMG_SIZE, WT_CONV1_DDR_ADDR, 0x900000,
+%           IMG_DIM, IMG_DEPTH, CV1_DIM, CV1_DEPTH);
+% // Read the OFM result (computed by the accelerator) to the
+% // local conv1_ofm in RISC-V DMem
+% dma_read_ddr(0x900000, (uint32_t)conv1_ofm >> 2, CONV1_OFM_SIZE);
+% int32_t chksum = checksum_i32(conv1_ofm, CONV1_OFM_SIZE);
+% uwrite_int8s("\r\nChecksum: ");
+% uwrite_int8s(uint32_to_ascii_hex(chksum, buffer, BUF_LEN));
+% uwrite_int8s("\r\n");
+% \end{minted}
+
+% If you are unsure why your prediction result is different from the expectation, try to isolate the problem by verifying the checksum of your accelerator execution against the software version at each layer of the network.
+
+% As ever, always refer to the Synthesis log file as an additional means for debugging, especially if your implementation passes the simulation (and you're sure that you have rigorously simulated it with different testcases), but fails to run correctly on the FPGA. The simulator takes the behavioral description (in Verilog) of your circuit as input, and that behavioral description gets translated to circuit netlist after Synthesis; functional mismatches could occur due to many reasons, so you should inspect the log file and check all the suspicious warnings. As we are using Block Design flow in this checkpoint, the Synthesis log file that you should pay attention to is located here \verb|z1top_axi_proj/z1top_axi_proj.runs/z1top_axi_bd_z1top_axi_0_0_synth_1/runme.log|.
+
+% Please also feel free to add extra parameters to your accelerator. You need to change the MMIO addresses in software and your Riscv151 IO controller to support the new parameters.
+
+% Should you need to make changes to any of the files given to you, either to make your implementation more efficient or functioning, please feel free to do so.
+
+% \newpage
+% \subsection{Checkpoint 3 Deliverables Summary}
+
+% In-lab Checkoff: Demonstrate that your accelerator implementation \verb|xcel_opt| works correctly with the \textit{lenet} software, i.e. it should produce a result that matches the software implementation when testing with the first 128 images from the MNIST dataset. You should be able to obtain some speedup over the given baseline \verb|xcel_naive| implementation. There is no target speedup for the checkpoint as long as you implement some memory optimization (e.g., buffering) and compute optimization (e.g., loop unrolling, pipelining) for your accelerator.
+
+% Additionally, please write a short report (push to \textit{docs/}) with your answers to the following questions
+% \begin{itemize}
+% \item Sketch the block diagram of your accelerator design. What memory and compute optimizations would you like to highlight in your design?
+% \item What is the speedup of your optimized accelerator on testing 128 images over the software execution in terms of \textbf{cycle count}? What about the baseline (naive) accelerator implementation?
+% \item Where do you think the speedup comes from? What makes the software (CPU) execution so inefficient in comparison to the specialized hardware implementation?
+% \item The RV32I instruction set encoding implemented in our Riscv151 does not have a multiply instruction. Therefore, a multiplication is carried out by a software routine instead (look at the \textbf{times} function in \verb|mmult/mmult.c| as well as \verb|lenet/cnn.c|). Can you come up with an approach to implement a \textit{multiply operation} for your processor (that should be more efficient than invoking \textbf{times} function)? You don't have to implement it, just briefly describe how you would do it and how many cycles it would take.
+
+% Your approach should also consider how you would go about modifying the software code (e.g., \verb|mmult/mmult.c|, or \verb|lenet/cnn.c|) to support this new operation in order to improve the performance of the program execution.
+
+% \item What is the maximum achievable frequency of your implementation now? What is the resource utilization of your implementation (LUTs, FFs, BRAMs, DSPs)?
+% \end{itemize}
 
 \newpage
-\subsubsection{maxpool2D}
+\section{Checkpoint 3 - Optimization}
 
-\begin{minted}[fontsize=\footnotesize]{C}
-#define OFM_DIM  (IFM_SIZE / 2)
-#define OFM_SIZE (OFM_DIM * OFM_DIM)
-#define IFM_SIZE (IFM_DIM * IFM_DIM)
-
-for (f = 0; f < OFM_DEPTH; f++) {
-  for (i = 0; i < OFM_DIM; i++) {
-    for (j = 0; j < OFM_DIM; j++) {
-      int8_t tmp0 = ifm[d * IFM_SIZE + (i*2+0) * IFM_DIM + (j*2+0)];
-      int8_t tmp1 = ifm[d * IFM_SIZE + (i*2+1) * IFM_DIM + (j*2+0)];
-      int8_t tmp2 = ifm[d * IFM_SIZE + (i*2+0) * IFM_DIM + (j*2+1)];
-      int8_t tmp3 = ifm[d * IFM_SIZE + (i*2+1) * IFM_DIM + (j*2+1)];
-
-      tmp0 = (tmp0 > 0) ? tmp0 : 0;
-      tmp1 = (tmp1 > 0) ? tmp1 : 0;
-      tmp2 = (tmp2 > 0) ? tmp2 : 0;
-      tmp3 = (tmp3 > 0) ? tmp3 : 0;
-
-      ofm[f * OFM_SIZE + i * OFM_DIM + j] = max(tmp0, tmp1, tmp2, tmp3);
-    }
-  }
-}
-
-\end{minted}
-
-%\newpage
-\subsubsection{fconn}
-
-\begin{minted}[fontsize=\footnotesize]{C}
-// In some sense, a fully-connected operation can also be view as conv3D
-// with WT_DIM == IFM_DIM (and OFM_DIM = 1)
-
-#define WT_DIM    (IFM_DIM)
-#define IFM_SIZE  (IFM_DIM * IFM_DIM)
-#define WT_SIZE   (WT_DIM * WT_DIM)
-#define WT_VOLUME (IFM_DEPTH * WT_SIZE)
-
-for (f = 0; f < OFM_DEPTH; f++) {
-  int32_t tmp = 0;
-  for (d = 0; d < IFM_DEPTH; d++) {
-    for (i = 0; i < IFM_DIM; i++) {
-      for (j = 0; j < IFM_DIM; j++) {
-        int32_t ifm_data = ifm[d * IFM_SIZE + i * IFM_DIM + j];
-        int32_t wt_data  = wt[f * WT_VOLUME + d * WT_SIZE + i * WT_DIM + j];
-        tmp += ifm_data * wt_data;
-      }
-    }
-  }
-  ofm[f] += tmp;
-}
-
-\end{minted}
-
-\newpage
-\subsection{Naive conv3D: Sources of Inefficiency}
-
-A straight mapping from a software description to a hardware implementation, without considering many inherent characteristics of the system (memory latency, buffering, available compute blocks, etc.), undoubtedly yields poor result. Have a look at the baseline conv3D implementation given to you: \verb|hardware/src/accelerator/xcel_naive.v|. There are a few weaknesses in this implementation.
-
-\begin{itemize}
-\item This implementation reads the elements of input feature map redundantly without considering the fact that there are some overlap between the current and the next sliding window (with a stride of 1). Therefore, the off-chip memory latency quickly overwhelms the performance and leaves the compute unit starving for data most of the time.
-\item This implementation does not consider the fact that the weight and input feature map are 8-bit data, and that 4 weight/IFM items could be packed in a single read transfer at a time since our AXI data bus is 4 times wider. Instead, it issues 4 separate single read transfers for those consecutive weight/IFM data items. The redundancy adds extra communication overhead.
-\item This implementation does not utilize burst mode to achieve better memory bandwidth utilization, especially since there are multiple data items in a row and one could set up a burst request to read them all in successive cycles with some intial startup overhead from the request to the response.
-\item This implementation does not utilize any intermediate buffer to store the partial compute results on chip. Instead, the partial output channel result (OFM) is written back to the DRAM, and then read again to accumulate with the next result.
-\item Per sliding window computation, the weight and the IFM data are preloaded into shift registers, then a single multiply-accumulation (MAC) operation is performed per cycle of the sliding window. However, one could also fully unroll this computation to use more MAC operations to compute a sliding window in a cycle with the trade-off of more hardware resource.
-\item The FSM design serializes the execution and leaves small room to achieve pipelining or overlapping between memory fetching/writing and computation. The FSM embeds the mental model of the sequential software execution. Can we redesign or get rid of the FSM to achieve better pipelining execution of memory fetch/write and computation?
-\end{itemize}
-
-To build an efficient accelerator, one needs to not only understand how the software code works, but also be able to transform it to some form that is hardware-friendly in terms of memory access patterns, data reuses, and parallel executions. The topic of CNN acceleration has been extensively studied and explored, so we won't have any issues of finding some existing architecture to implement for the checkpoint. Nonetheless, you're also welcome to pursue your own ideas.
-
-\subsection{AXI Bus Interface}
-
-This section intends to provide you some background on the ARM's AMBA AXI bus interface.
-AXI is a widely popular standard interface for establishing and standardizing the communication between many IP cores.
-Our communication cores (DMA, Accelerator, AXI Adapter) adopt the AXI4 interface bus protocol.
-There are separate read/write request and response channels.
-Per each channel, a handshake mechanism (Ready/Valid) is used to indicate a successful transaction.
-
-You can skim the official ARM's AXI specification \href{https://developer.arm.com/documentation/ihi0022/b}{here} for more information (chapter 2, 3, and 4).
-The reading is entirely optional. The following subsections give a brief summary on the protocol and things that are particularly important for this checkpoint.
-Additional resource is Xilinx \href{https://www.xilinx.com/support/documentation/ip\_documentation/ug761\_axi\_reference\_guide.pdf}{AXI Reference Guide}.
-
-To reduce the design complexity, our AXI data bus width is set to 32-bit to match with the data word width of the RISC-V processor. And similar to our processor core, the Zynq PS uses byte-level addressing. A read from a DRAM memory location retrieves 4 consecutive bytes on the data bus. Likewise, a write to a memory location will update all 4 bytes. There's also a write strobe signal to set which byte lane(s) of the data bus to write to the memory.
-
-The AXI read/write logic to interface with the Zynq PS is provided to you:
-
-\verb|hardware/src/accelerator/axi_mm_adapter.v|.
-
-One of your responsibilities in \verb|hardware/src/accelerator/xcel_opt.v| is to figure out how to set up the read and write interface channels to the AXI Adapter core so that your accelerator can read or write data correctly from and to the off-chip DRAM.
-
-\subsubsection{Read Interface Channels}
-
-\textbf{1. Read Address Request channel}
-\begin{itemize}
-\item \textbf{araddr}: Memory read request address (output)
-\item \textbf{arvalid}: Memory read request address valid signal (output)
-\item \textbf{arready}: Memory read request address ready signal (input)
-\item \textbf{arlen}: Memory read burst length (output): the number of data transfers per read transaction (offset by 1).
-\item \textbf{arsize}: Memory read burst size (output): the number of bytes per data transfer (log based 2).
-\item \textbf{arburst}: Memory read burst type (output). Set to \textit{INCREMENT} so that the bus receives successive data items in a row.
-\end{itemize}
-
-\textbf{2. Read Data Response channel}
-\begin{itemize}
-\item \textbf{rdata}: Memory read response data (input)
-\item \textbf{rvalid}: Memory read response data valid signal (input)
-\item \textbf{rready}: Memory read response data ready signal (output)
-\item \textbf{rlast}: Memory read response data last signal (input). Stays HIGH on the last data transfer.
-\end{itemize}
-
-Figure ~\ref{fig:axi_read} demonstrates an example of an AXI read transaction.
-A read request is submitted, and a burst of 4 data beats are sent to the read response data channel.
-
-Figure ~\ref{fig:axi_read_burst} shows the timings of the relevant AXI signals on a read transaction. Note how handshake is used to indicate when we have a fired request or response data (valid and ready are both HIGH at a rising clock edge).
-
-\begin{figure}[hbt]
-\begin{center}
-  \includegraphics[width=0.6\textwidth]{axi_read.png}
-  \caption{An AXI read transaction. Source: \href{https://developer.arm.com/documentation/ihi0022/b}{AXI Spec}}
-  \label{fig:axi_read}
-\end{center}
-\end{figure}
-
-\begin{figure}[hbt]
-\begin{center}
-  \includegraphics[width=0.6\textwidth]{axi_read_burst.png}
-  \caption{An AXI read burst timing diagram. Source: \href{https://developer.arm.com/documentation/ihi0022/b}{AXI Spec}}
-  \label{fig:axi_read_burst}
-\end{center}
-\end{figure}
-
-\subsubsection{Write Interface Channels}
-
-\textbf{1. Write Address Request channel}
-\begin{itemize}
-\item \textbf{awaddr}: Memory write request address (output)
-\item \textbf{awvalid}: Memory write request address valid signal (output)
-\item \textbf{awready}: Memory write request address ready signal (output)
-\item \textbf{awlen}: Memory write burst length (output): the number of data transfers per read transaction (offset by 1).
-\item \textbf{awsize}: Memory write burst size (output): the number of bytes per data transfer (log based 2).
-\item \textbf{awburst}: Memory write burst type (output). Set to \textit{INCREMENT} so that the bus receives successive data items in a row.
-\end{itemize}
-
-\textbf{2. Write Data Request channel}
-\begin{itemize}
-\item \textbf{wdata}: Memory write request data (output)
-\item \textbf{wvalid}: Memory write request data valid (output)
-\item \textbf{wready}: Memory write request data ready (input)
-\item \textbf{wlast}: Memory write request data last (output). Set to HIGH on the last write data transfer.
-\item \textbf{wstrb}: Memory write request data strobe (output). Set to 4'b1111 if writing the full word to the DRAM memory.
-\end{itemize}
-
-\textbf{3. Write Response channel}
-\begin{itemize}
-\item \textbf{bresp}: Memory write response (input). The value \textit{RESP\_OKAY} (4'b0000) indicates a write sucess.
-\item \textbf{bvalid}: Memory write response valid signal (input)
-\item \textbf{bready}: Memory write response ready signal (output)
-\end{itemize}
-
-Figure ~\ref{fig:axi_write} demonstrates an example of an AXI write transaction.
-A write request is submitted, and a burst of 4 data beats are sent to the write data channel.
-
-Figure ~\ref{fig:axi_write_burst} shows the timings of the relevant AXI signals on a write transaction. Also note how handshake is used to indicate when we have a fired request or response.
-
-\begin{figure}[hbt]
-\begin{center}
-  \includegraphics[width=0.6\textwidth]{axi_write.png}
-  \caption{An AXI write transaction. Source: \href{https://developer.arm.com/documentation/ihi0022/b}{AXI Spec}}
-  \label{fig:axi_write}
-\end{center}
-\end{figure}
-
-\begin{figure}[hbt]
-\begin{center}
-  \includegraphics[width=0.6\textwidth]{axi_write_burst.png}
-  \caption{An AXI write burst timing diagram. Source: \href{https://developer.arm.com/documentation/ihi0022/b}{AXI Spec}}
-  \label{fig:axi_write_burst}
-\end{center}
-\end{figure}
-
-\newpage
-\subsection{Vivado Block Design with Zynq Processing System (PS)}
-
-\begin{figure}[hbt]
-\begin{center}
-  \includegraphics[width=0.7\textwidth]{images/vivado_bd_z1top_axi.png}
-  \caption{The Block Design of z1top\_axi module with the Zynq PS}
-  \label{fig:z1top_axi}
-\end{center}
-\end{figure}
-
-Figure ~\ref{fig:z1top_axi} shows the Block design of the full system after running the following command.
-
-\begin{minted}{bash}
-make build-project proj=z1top_axi
-\end{minted}
-
-Our \verb|z1top_axi.v| communicates with the Zynq PS through the AXI SmartConnect IP using the AXI4 bus interface. The Zynq PS also serves as a memory controller to the off-chip DRAM. Therefore, the only way for a module implemented in the Programmable Logic (PL) to access to the DRAM is through the Zynq PS. A High Performance AXI port (HP0) is used to communicate with the PL. The Zynq PS can be configured to use up to 4 HPs (HP0-3) to increase the memory bandwidth. For the sake of simplicity, we only use one HP port.
-
-Also note that the Zynq PS supplies the clock signal \verb|FCLK_CLK0| to the fabric modules. To avoid extra timing complexity concerning with multi-clock domains, we will not use our usual \verb|CLK_FPGA_125MHZ|, but rather rely on the clock signal from the PS to clock the synchronous logic of our implementation.
-
-If you are curious as how to build the project manually with the GUI, refer to the Appendix \ref{sec:vivado_bd} for the details.
-
-\subsection{System Integration with Riscv151}
-\subsubsection{Memory-mapped IO (MMIO) Registers of the DMA Controller and the Accelerator}
-
-You will need to extend your IO memory-mapped logic to integrate the DMA controller and the Accelerator (xcel) cores to Riscv151. We will use the load and store instructions to the memory-mapped IO registers as a mechanism to control (start) or check the status of these IO modules (idle, done) as similar to how we have done it with the UART modules in Checkpoint 2. The done signal should be kept HIGH once the \texttt{dma} or \texttt{xcel} finishes, since a software code will keep polling on this signal (busy-waiting) before moving to the next part of the program. In addition, we introduce additional memory-mapped registers to set various address offsets so that the cores know where to access the correct data in any memory devices (DRAM or \texttt{DMem}). This is a neat approach to avoid hard-coding the addresses or recompiling the whole bitstream everytime we change the memory layout of the software/application code. The input/output feature map dimension and depth can also be set in software code.
-
-The addresses of the MMIO registers are defined in \verb|software/151_library/memory_map.h|.
-
-\begin{table}[hbt]
-  \begin{center}
-    \caption{MMIO addresses for the DMA Controller and the Accelerator}
-    \label{mem_map_dma_xcel}
-    \begin{adjustbox}{width=\columnwidth,center}
-    \begin{tabular}{l l l l}
-      \toprule
-      \textbf{Address} & \textbf{Function} & \textbf{Access} & \textbf{Data Encoding}\\
-      \midrule
-      \verb|32'h80000030| & dma control (start) & Write & N/A \\
-      \verb|32'h80000034| & dma status & Read & \verb|{30'b0, idle, done}| \\
-      \verb|32'h80000038| & dma direction (1: \texttt{DMem} to DRAM, 0: DRAM to \texttt{DMem}) & Write & \verb|{31'b0, direction}| \\
-      \verb|32'h8000003c| & dma source address & Write & DMA source address (32-bit) \\
-      \verb|32'h80000040| & dma destination address & Write & DMA destination address (32-bit) \\
-      \verb|32'h80000044| & dma transfer length (per 4 bytes) & Write & DMA transfer length (32-bit) \\
-      \verb|32'h80000050| & xcel control (start) & Write & N/A \\
-      \verb|32'h80000054| & xcel status & Read & \verb|{30'b0, idle, done}| \\
-      \verb|32'h80000058| & xcel input feature map DRAM address & Write & IFM DRAM address (32-bit) \\
-      \verb|32'h8000005c| & xcel weight DRAM address & Write & WT DRAM address (32-bit) \\
-      \verb|32'h80000060| & xcel output feature map DRAM address & Write & OFM DRAM address (32-bit) \\
-      \verb|32'h80000064| & xcel input feature map dimension & Write & IFM dimension value (32-bit) \\
-      \verb|32'h80000068| & xcel input feature map depth (number of channels) & Write & IFM depth value (32-bit) \\
-      \verb|32'h8000006c| & xcel output feature map dimension & Write & OFM dimension value (32-bit) \\
-      \verb|32'h80000070| & xcel output feature map depth (number of channels) & Write & OFM depth value (32-bit) \\
-      \bottomrule
-    \end{tabular}
-    \end{adjustbox}
-  \end{center}
-\end{table}
-
-
-\subsubsection{Integrating DMA Controller with CPU Data Memory}
-
-You might have already noticed that this system would not work with the current setting of Riscv151 in that \texttt{DMem} is a single-port memory block. In addition, port a is currently being used for the CPU load and store instructions. We would need to do the following steps to integrate the DMA Controller safely to the existing system.
-
-\begin{itemize}
-\item Use a dual-port memory template for \texttt{DMem} (look at \texttt{IMem} as an example)
-\item Connect port b of \texttt{DMem} to the Memory interface of the DMA Controller (via Riscv151).
-\end{itemize}
-
-This will enable the DMA Controller to have access to the Data Memory.
-
-\subsection{LeNet Demo software code}
-
-The FPGA demo of this checkpoint is to run the software code \verb|software/lenet| on your RISC-V processor. The demo runs the LeNet inference to perform handwritten digit classification of the first 128 test images from the MNIST dataset. The demo can be compiled to run with either software flow (running the entire LeNet on the RISC-V) or the hardware-software partition/hybrid flow (executing the two conv3D layers on the accelerator, and the rest of the LeNet on RISC-V). In the software flow, the DRAM-read DMA operations are carried out to first fetch all the weight data to \texttt{DMem} of the RISC-V core. A test image is also fetched from the DRAM to \texttt{DMem} before running the network. The output feature map results of each layer are written to the arrays allocated in \texttt{DMem} and read by the next layer. Our \texttt{DMem} is large enough to hold the weights and the OFM results of the layers in addition to a single test image.
-
-The hardware/software partition flow, on the other hand, performs the conv3D operation in the hardware accelerator (\texttt{xcel}). By supplying the weight and image addresses in the DRAM, the accelerator knows where to get the data and performs its computation. The output feature map result is written back to the DRAM at an address specified in software (e.g., \verb|0x00900000|). The data is then read by the DMA to \texttt{DMem} since the Max Pooling layers are executed on RISC-V.
-
-\begin{center}
-\includegraphics[width=0.7\textwidth]{images/lenet_hybrid_flow.png}
-\end{center}
-
-In practice, you could implement an accelerator that computes all the layers with intermediate buffers to store the OFMs, so that no DMA operation is needed to copy data back-and-forth between the DRAM and \texttt{DMem}, therefore reducing the number of off-chip memory accesses. Please feel free to change the hardware/software partition flow in accordance with your accelerator design and implementation.
-
-\newpage
-\subsection{Steps to Complete Checkpoint 3}
-
-First, get the latest changes from the project skeleton repo
-
-\begin{minted}{bash}
-git pull staff main
-git submodule update --init --recursive
-\end{minted}
-
-This will clone the \verb|arm_baremetal_app| submodule.
-
-The next step is integrating the \texttt{dma\_controller} and \texttt{xcel\_naive} to your existing Riscv151 processor.
-First, you need to modify the interface of \verb|hardware/src/riscv_core/Riscv151.v| to include some additional input/output ports to connect to the DMA controller and the Accelerator as follows.
-
-\newpage
-\begin{minted}[fontsize=\footnotesize]{Verilog}
-module Riscv151 #(
-  parameter CPU_CLOCK_FREQ = 50_000_000,
-  parameter RESET_PC       = 32'h4000_0000,
-  parameter BAUD_RATE      = 115200,
-  parameter BIOS_MIF_HEX   = "bios151v3.mif"
-) (
-  input  clk,
-  input  rst,
-  input  FPGA_SERIAL_RX,
-  output FPGA_SERIAL_TX,
-  output [31:0] csr,
-
-  // Accelerator Interfacing
-  output xcel_start,
-  input xcel_done,
-  input xcel_idle,
-
-  output [31:0] ifm_ddr_addr,
-  output [31:0] wt_ddr_addr,
-  output [31:0] ofm_ddr_addr,
-
-  output [31:0] ifm_dim,
-  output [31:0] ifm_depth,
-
-  output [31:0] ofm_dim,
-  output [31:0] ofm_depth,
-
-  // DMA Interfacing
-  output dma_start,
-  input  dma_done,
-  input  dma_idle,
-  output dma_dir,
-  output [31:0] dma_src_addr,
-  output [31:0] dma_dst_addr,
-  output [31:0] dma_len,
-
-  // DMem Interfacing (Port b)
-  input  [13:0] dmem_addrb,
-  input  [31:0] dmem_dinb,
-  output [31:0] dmem_doutb,
-  input  [3:0]  dmem_web,
-  input         dmem_enb
-);
-\end{minted}
-
-You need to expand your IO memory-mapped logic to perform load/store to the memory addresses of these IO modules as mentioned in the section above,
-so that the CPU can control them from software. In addition, you will also need to convert \texttt{DMem} to dual-port memory block.
-Use \texttt{port b} to connect to the \texttt{dma\_controller} via the interface of the Riscv151 processor.
-Don't forget to wire the enable port of \texttt{DMem} to \texttt{dmem\_enb} from the interface.
-Also note that we're no longer using \verb|hardware/src/z1top.v| for this checkpoint, but \verb|hardware/src/z1top_axi.v| instead.
-
-Once you finish the integration, don't forget to rerun the simulation of all the tests from Checkpoint 2 to make sure that the new changes don't accidentally introduce bugs to your processor.
-
-Next, generate a bitstream to configure your FPGA. Now you can pass the target clock frequency to the command.
-
-\begin{minted}{bash}
-# This command will implement and generate bitstream
-# for the z1top_axi module and set the clock period to 20ns
-make write-bitstream proj=z1top_axi clk=20
-\end{minted}
-
-Next, before programming the FPGA, you need to run the following script to initialize the Zynq PS (init the clock signal and the DRAM).
-
-\begin{minted}{bash}
-# If you are programming the FPGA from a lab machine with the Hardware Server,
-# make sure that you update the port number in
-# hardware/scripts/init_arm.tcl to your assigned port number.
-# This script only needs to run once when you first turn on the board,
-# or when your bitstream is implemented with a new clock period
-make init-arm
-
-# Program the board
-make program-fpga bs=bitstream_files/z1top_axi.bit
-\end{minted}
-
-Next, test the DRAM communication with your Riscv151 to verify that you have integrated the DMA correctly. There is a software program for that \verb|software/axi_test|. Run the program using the same command as in \texttt{mmult} case. Alternatively, you can do
-
-\begin{minted}{bash}
-cd software/axi_test
-make run
-\end{minted}
-
-Next, open the screen program as usual, then do \verb|jal 10000000|.
-
-This program sends an array allocated in \texttt{DMem} of your RISC-V core to a memory location in the DRAM (DMA write operation), and reads from that memory location (DMA read operation) and writes the result to a different array in \texttt{DMem}. There should not be any mismatches between the two arrays once the DMA finishes. Try testing with different transfer lengths or addresses.
-
-If the DMA is working, you can move on to the next part, which is to run the LeNet software. Go to \verb|software/lenet|, and run the program as follows.
-
-\begin{minted}{bash}
-# This will compile and run the hardware implementation of LeNet (only conv3D is
-# put in hardware)
-make clean && make xcel=HW
-make run
-# This will compile and run the software implementation of LeNet
-make clean && make
-make run
-
-# You can also use the hex_to_serial script to load the generate MIF file
-# to the UART as in the mmult demo
-
-\end{minted}
-
-Open screen and then do \verb|jal 10000000| to execute the program.
-The program tests 128 images with 127 correct predictions (\verb|0x0000007f|).
-The failed prediction is at the image \verb|0x00000073| with a prediction of 9
-while the groundtruth is 4. The groundtruth labels can be checked \href{https://github.com/EECS150/arm_baremetal_app/blob/main/system/src/labels.h}{here}.
-
-You can also test with fewer images (change the macro \verb|NUM_TEST_IMAGES| in \verb|lenet.c|) to make the program run a little faster.
-
-Once you get a sense of how the entire flow works, it's time to code your own accelerator!
-You can use the naive code as a starting point, but please feel free to write your own code for everything.
-Add your own implementation to \verb|xcel_opt.v|, then replace the naive module with the opt module
-in \verb|z1top_axi.v|.
-
-\subsection{Resources and Suggestions for Accelerator design}
-
-You are encouraged to visit the \href{http://eyeriss.mit.edu/tutorial.html}{MIT DNN Eyeriss tutorial} for ideas on how to build the accelerator for the 3D Convolution operation or CNN in general. The DNN Accelerators slides: \href{http://www.rle.mit.edu/eems/wp-content/uploads/2019/06/Tutorial-on-DNN-05-DNN-Accelerator-Architectures.pdf}{Part 1} and \href{http://www.rle.mit.edu/eems/wp-content/uploads/2019/06/Tutorial-on-DNN-06-RS-Dataflow-and-NoC.pdf}{Part 2} are particularly informative and might be useful for you as a starting point (check the \textit{Row-stationary architecture}).
-
-You can also design a conv2D accelerator and augment it to compute 3D Convolution. As an example, the conv2D engine shown in the following figure fully unrolls the sliding-window computation kernel. Each Processing Element (PE) holds one row of a weight channel in a shift register, and performs a conv1D operation with a row fetched from the IFM, then buffers the result to a FIFO in order to accumulate with the result computed by the next PE. The general idea is that a conv2D operation can be accomplished by doing a conv1D operation separately on each row of a weight channel, then accumulate the result. The final accumulated value is written to the OFM buffer. This convolution architecture achieves two primary optimizations: i) \textbf{parallelization} due to unrolling -- the PEs compute their own conv1D concurrently without any synchronization overhead due to the use of intermediate FIFO buffers; ii) \textbf{data reuse} -- the weight data is reused throughout one conv2D execution, and an IFM data item is only fetched and used once across all the PE, therefore, no redundant data is read from the memory. This architecture is also suitable for streaming execution which the input to the engine can be a FIFO buffer or any streaming interface.
-
-\begin{center}
-\includegraphics[width=0.7\textwidth]{images/conv2D_engine.png}
-\end{center}
-
-On the performance estimation, barring a few cycles due to the overhead of filling the shift registers (both IFM and WT) at the beginning or when transitioning from one row to the next, the engine should be able to complete one OFM (partial) channel (or conv2D) in roughly \verb|OFM_SIZE| cycles. One could as well instantiates multiple conv2D engines to compute more OFM (partial) channels in parallel.
-
-The slides \href{https://drive.google.com/file/d/1SJ6eUK9qJZXzZpeHY_D31d1M95nZMTjR/view?usp=sharing}{\textbf{here}} shows some detailed cycle-by-cycle operations of the engine and might be able to give you some ideas to get started.
-
-Alternatively, start with something simple that works first, then worry about optimization later. It makes sense to just copy all the weight data and a test image to on-chip BRAM before you start doing the computatation. Buffering the temporary result to another local buffer, and only writing back to the DRAM once everything is done. Using burst mode is highly recommended. As a reference, you can take a look at the code in \verb|hardware/src/accelerator/dma_controller.v| to see some examples of how to setup a burst read/write request, and then how to convert the AXI interface to the RAM interface (i.e., \verb|addr|, \verb|din|, \verb|dout|, \verb|we|) and vice versa. You could do something similar to that in your accelerator. When implementing the bus read/write logic, adopt good practice when it comes to handshake: don't wire ready to valid or vice versa. Another good practice is to modularize the design to two modules as similar to the naive implementation: compute unit and memory interface unit. The memory interface unit handles reading and writing data to the DRAM, while the compute unit performs some computation (e.g., conv3D). For the compute unit, simplify the interface (e.g., RAM interface) so that it allows you to concentrate on implementing and testing the functionality of the computation core.
-
-Once you have the data on chip, the low-hanging fruit is doing some unrolling or pipelining for parallel execution. Make use of dual-port memory modules to allow you to have more parallel accesses. In addition, try not to use a monolithic memory for everything, but instead split it to smaller modules and assign one for each compute unit.
-
-As an additional tip for debugging, you can take advantage of Vivado Integrated Logic Analyzer, especially when you debug your AXI read and write logic in your accelerator design. Check the Appendix \ref{sec:vivado_ila} for more detail. Nonetheless, don't rely too much on ILA since it would add extra time to the already arduous Place-and-Route process. The best way to debug is still writing your own testbenches and doing RTL simulation before you run Vivado implementation. A testbench for conv3D has been provided to you. Please feel free to use or change the testbench as you see fit.
-
-\begin{minted}{bash}
-cd hardware
-make iverilog-sim tb=xcel_testbench
-\end{minted}
-
-The testbench does not invoke any software MIF file nor the RISC-V core that you designed in Checkpoint 2. Rather, it tests the functionality of the xcel accelerator (conv3D) with a simple \verb|hardware/sim/mem_model.v| in place. A memory block is instantiated in the memory model to initialize data for testing. There's also another testbench that verifies the functionality of the compute unit only (excluding the memory interface logic). You may want to use these testbenches when you design and implement your optimized \verb|xcel| module. Start by implementing a compute module that passes \verb|conv3D_testbench| first, then add a memory interface module to handle bus read/write logic, and finally put everything together to test with \verb|xcel_testbench|. Please feel free to modify these testbenches to fit your own needs.
-
-\begin{minted}{bash}
-cd hardware
-make iverilog-sim tb=conv3D_testbench
-\end{minted}
-
-If you would like to start from the naive version, you could try optimizing one unit at a time so that it becomes less overwhelming when you implement and debug your design. For example, start with the naive memory unit module: add burst mode or local memory buffers for memory optimization. Keep the naive compute unit module intact, then simulate with the \verb|xcel_testbench|, and test on the board to verify that your memory optimization works correctly. Once you're confident about your optimized memory unit, the next step is optimizing the compute unit. The decoupled or handshake interface between the given compute and the memory modules, as illustrated in the following figure, allows us to modularize the accelerator design to focus on doing and testing one thing at a time, which to a greater extent help ease the debugging effort. Note that, here \verb|addr| and \verb|ready| are used to signify a memory read equest from the compute unit to the memory interface unit, while \verb|dout| along with \verb|valid| are the memory read response from the memory interface unit to the compute module. On the other hand, \verb|din|, \verb|addr|, and \verb|valid| combines to a memory write request to the memory interface module.
-
-\begin{center}
-\includegraphics[width=0.3\textwidth]{images/compute_memif.png}
-\end{center}
-
-Once you have everything working, you can further simplify your implementation by removing the handshake mechanism if your compute unit only retrieves or writes data to some local buffers whose the access latency is statically known.
-
-Regarding the choices of buffers for memory optimization, you may use your own FIFO modules, or \verb|ASYNC_RAM| / \verb|SYNC_RAM| module templates from \verb|hardware/src/EECS151.v| depending on your implementation. However, recall in Lab 3 and lectures, an \verb|ASYNC_RAM| gets mapped to the LUTRAM, while a \verb|SYNC_RAM| is synthesized to BRAM on the FPGA. Typically, LUTRAMs makes sense for implementing small data storage such as a $32\times32$ Register File in your RISC-V processor. At a greater scale and density, a BRAM would be a more appropriate choice and would help your design achieve much better QoR in terms of area and maximum achievable frequency. Note that on our PYNQ-Z1 platform, there are 17400$\times$64b LUTRAM cells in total, while the number of 36Kb BRAM cells is 140. You should do the calculation and budget your memory allocation appropriately to make sure that your design can accommodate the amount of data that you decide to fetch from the DRAM to on-chip storage.
-
-When doing on-board testing (running the LeNet code on your FPGA), you may want to use the checksum functions (\verb|checksum_i32()| and \verb|checksum_i8()| in \verb|software/lenet/lenet.c|) to verify if your implementation works correctly (similar to \texttt{mmult} case). Set \textit{NUM\_TEST\_IMAGES} to 1 to test with only the first image. The prediction result is 7, and below are the checksums of the OFM returned by each layer
-
-\begin{itemize}
-\item conv1\_ofm: \verb|0x005a3760| (calculated with \verb|checksum_i32()|)
-\item pool1\_ofm: \verb|0x00002d6b| (calculated with \verb|checksum_i8()|)
-\item conv2\_ofm: \verb|0xff41b202| (calculated with \verb|checksum_i32()|)
-\item pool2\_ofm: \verb|0x00001451| (calculated with \verb|checksum_i8()|)
-\item fc\_ofm: \verb|0xffffa09a| (calculated with \verb|checksum_i32()|)
-\end{itemize}
-
-Here is an example of how to calculate the checksum of the OFM result computed by the first conv3D layer.
-
-\newpage
-\begin{minted}{C}
-// Perform conv3D on the accelerator
-// Write the OFM result to DDR at address 0x90_0000
-conv3D_hw(IMAGES_DDR_ADDR + i * IMG_SIZE, WT_CONV1_DDR_ADDR, 0x900000,
-          IMG_DIM, IMG_DEPTH, CV1_DIM, CV1_DEPTH);
-// Read the OFM result (computed by the accelerator) to the
-// local conv1_ofm in RISC-V DMem
-dma_read_ddr(0x900000, (uint32_t)conv1_ofm >> 2, CONV1_OFM_SIZE);
-int32_t chksum = checksum_i32(conv1_ofm, CONV1_OFM_SIZE);
-uwrite_int8s("\r\nChecksum: ");
-uwrite_int8s(uint32_to_ascii_hex(chksum, buffer, BUF_LEN));
-uwrite_int8s("\r\n");
-\end{minted}
-
-If you are unsure why your prediction result is different from the expectation, try to isolate the problem by verifying the checksum of your accelerator execution against the software version at each layer of the network.
-
-As ever, always refer to the Synthesis log file as an additional means for debugging, especially if your implementation passes the simulation (and you're sure that you have rigorously simulated it with different testcases), but fails to run correctly on the FPGA. The simulator takes the behavioral description (in Verilog) of your circuit as input, and that behavioral description gets translated to circuit netlist after Synthesis; functional mismatches could occur due to many reasons, so you should inspect the log file and check all the suspicious warnings. As we are using Block Design flow in this checkpoint, the Synthesis log file that you should pay attention to is located here \verb|z1top_axi_proj/z1top_axi_proj.runs/z1top_axi_bd_z1top_axi_0_0_synth_1/runme.log|.
-
-Please also feel free to add extra parameters to your accelerator. You need to change the MMIO addresses in software and your Riscv151 IO controller to support the new parameters.
-
-Should you need to make changes to any of the files given to you, either to make your implementation more efficient or functioning, please feel free to do so.
-
-\newpage
-\subsection{Checkpoint 3 Deliverables Summary}
-
-In-lab Checkoff: Demonstrate that your accelerator implementation \verb|xcel_opt| works correctly with the \textit{lenet} software, i.e. it should produce a result that matches the software implementation when testing with the first 128 images from the MNIST dataset. You should be able to obtain some speedup over the given baseline \verb|xcel_naive| implementation. There is no target speedup for the checkpoint as long as you implement some memory optimization (e.g., buffering) and compute optimization (e.g., loop unrolling, pipelining) for your accelerator.
-
-Additionally, please write a short report (push to \textit{docs/}) with your answers to the following questions
-\begin{itemize}
-\item Sketch the block diagram of your accelerator design. What memory and compute optimizations would you like to highlight in your design?
-\item What is the speedup of your optimized accelerator on testing 128 images over the software execution in terms of \textbf{cycle count}? What about the baseline (naive) accelerator implementation?
-\item Where do you think the speedup comes from? What makes the software (CPU) execution so inefficient in comparison to the specialized hardware implementation?
-\item The RV32I instruction set encoding implemented in our Riscv151 does not have a multiply instruction. Therefore, a multiplication is carried out by a software routine instead (look at the \textbf{times} function in \verb|mmult/mmult.c| as well as \verb|lenet/cnn.c|). Can you come up with an approach to implement a \textit{multiply operation} for your processor (that should be more efficient than invoking \textbf{times} function)? You don't have to implement it, just briefly describe how you would do it and how many cycles it would take.
-
-Your approach should also consider how you would go about modifying the software code (e.g., \verb|mmult/mmult.c|, or \verb|lenet/cnn.c|) to support this new operation in order to improve the performance of the program execution.
-
-\item What is the maximum achievable frequency of your implementation now? What is the resource utilization of your implementation (LUTs, FFs, BRAMs, DSPs)?
-\end{itemize}
-
-\newpage
-\section{Final Checkpoint - Optimization}
-
-This optimization checkpoint is lumped with the final checkoff.
+Checkpoint 3 is an optimization checkpoint lumped with the final checkoff.
 This part of the project is designed to give students freedom to implement the optimizations of their choosing to improve the performance of their processor.
 
 The optimization goal for this project is to minimize the \textbf{execution time} on the \verb|mmult| program, as defined by the 'Iron Law' of Processor Performance.
@@ -1454,13 +1460,13 @@ The number of instructions is fixed, but you have freedom to change the CPI and 
 Often you will find that you will have to sacrifice CPI to achieve a higher clock frequency, but there also will exist opportunities to improve one or both of the variables without compromises.
 
 \subsection{Grading on Optimization: Frequency vs. CPI}
-You will receive a full credit for the final checkpoint if you can push your clock frequency of your working \textbf{Riscv151} implementation to 100 MHz. You must demonstrate that your processor has a working BIOS, can load and execute \textbf{mmult} (CPI does not need to be less than 1.2).
-
 The bare minimum is that you should improve the achievable frequency of your existing implementation since Checkpoint 2.
 
-Alternatively, a full credit can also be awarded on effort, in particular if you're able to evaluate different design trade-off points (at least three) between frequency and CPI of \textbf{mmult} (especially if you have implemented some interesting optimization for CPI and increase the frequency further would degrade the performance instead of helping).
+You must demonstrate that your processor has a working BIOS, can load and execute \textbf{mmult} (CPI does not need to be less than 1.2).
 
-Also note that your final optimized design does not need to be strictly three-stage pipeline.
+Full credit will be awarded if you're able to evaluate different design trade-off points (at least three) between frequency and CPI of \textbf{mmult} (especially if you have implemented some interesting optimization for CPI and increase the frequency further would degrade the performance instead of helping).
+
+Also note that your final optimized design does not need to be strictly three-stage pipeline. Extra credit will be awarded based on additional optimizations listed in the extra credit section, please check with a GSI ahead of time if you are expanding to include these. If you have other ideas please check with a GSI to see if it can be awarded extra credit.
 
 A \textbf{very minor} component of the optimization grade is based total FPGA resource utilization, with the best designs using as few resources as possible.
 Credit for your area optimizations will be calculated using a cost function.
@@ -1607,8 +1613,7 @@ The following are suggested projects that may or may not be feasible in one week
   \item Branch Predictor: Implement a two bit (or more complicated) branch predictor with a branch history table (BHT) to replace the naive 'always taken' predictor used in the project
   \item 5-Stage Pipeline: Add more pipeline stages and push the clock frequency past 100MHz
   \item RISC-V M Extension: Extend the processor with a hardware multiplier and divider
-  \item Everything 100MHz or beyond: Push the frequency of the full \verb|z1top_axi| (including your \verb|xcel_opt| accelerator) to 100MHz or better.
-  \item High-throughput LeNet accelerator: Improve the image processing throughput of your LeNet accelerator (overlap reading new image with processing the current image).
+  \item Everything 100MHz or beyond: Push the frequency of the full \verb|z1top| to 100MHz or better.
 \end{itemize}
 
 When the time is right, if you are interested in implementing any of these, see the staff for more details.
