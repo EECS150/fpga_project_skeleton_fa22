@@ -1,5 +1,6 @@
 \documentclass[11pt]{article}
 \usepackage{fullpage}
+\usepackage[page,toc,title]{appendix}
 \usepackage{verbatim}
 \usepackage{moreverb}
 \usepackage{amsmath}
@@ -21,6 +22,7 @@
 \definecolor{rltred}{rgb}{0.75,0,0}
 \definecolor{rltgreen}{rgb}{0,0.5,0}
 \definecolor{rltblue}{rgb}{0,0,0.75}
+\definecolor{berkeleyblue}{rgb}{0.19,0.35,0.52}
 
 \usepackage[%pdftex,
     colorlinks=true,
@@ -42,28 +44,58 @@
 \input{defines.tex}
 
 \begin{document}
+
+\pagenumbering{gobble}% Remove page numbers (and reset to 1)
+\clearpage
+\thispagestyle{empty}
+
 \begin{center}
-{\bf
+\includegraphics[width=0.25\textwidth]{images/Seal_of_University_of_California_Berkeley.png}
+\end{center}
+\begin{center}
+\LARGE{
+\color{gray}
+\bf EECS151/251A \\
+\currentSemester\\
+Final Project Specification\\
+}
+\end{center}
+
+\vfill
+
+
+\begin{center}
+\color{berkeleyblue}
+\Huge
+{\bf RISCV151 }  \\
+\end{center}
+
+\vfill
+
+\begin{center}
+\LARGE{
+\color{gray}
+Version \projectSpecVersion\\}
+\end{center}
+
+\vspace{3mm}
+
+\begin{center}
+\large{
+TA: Alisha Menon, Seah Kim, Yikuan Chen}
+\end{center}
+
+\begin{center}
+\large{
+\bf
 University of California at Berkeley \\
 College of Engineering \\
 Department of Electrical Engineering and Computer Science \\
 }
 \end{center}
 
-\begin{center}
-\LARGE{
-\bf EECS151/251A, \currentSemester}
-\end{center}
-\begin{center}
-TA: Alisha Menon, Seah Kim, Yikuan Chen
-\end{center}
-
-\begin{center}
-\LARGE
-{\bf Project Specification: RISCV151 }  \\
-Version \projectSpecVersion
-\end{center}
-
+\newpage
+\pagenumbering{arabic}
 \tableofcontents
 
 \newpage
@@ -85,21 +117,29 @@ These first steps can take significant time if you have not thought out your des
 As in previous semesters, your EECS151/251A project is probably the largest project you have faced so far here at Berkeley.
 Good time management and good design organization is critical to your success.
 
-\subsection{Tentative Deadlines}
+\subsection{Tentative Deadlines for All Sections}
 \label{tentative_deadlines}
 The following is a brief description of each checkpoint and approximately how many weeks will be alloted to each one. Note that this schedule is tentative and is subjected to change as the semester progresses.
 
 %The current schedule is summarised at the end of the document in Section \ref{project_timeline}.
 
+
+\begin{minipage}{\textwidth}
+\vspace{2mm}
 \begin{itemize}
-  \item \textbf{\blockDiagramDueDate \space - \blockDiagramTaskName \space (\blockDiagramTimeAlloted)} - Draw a schematic of your processor's datapath and pipeline stages, and provide a brief writeup of your answers to the questions in ~\ref{sec:chkpt1_questions}. In addition, push all of your IO-circuit Verilog modules that you have implemented in the labs to your assigned Github repository under \verb|hardware/src/io_circuits| (see ~\ref{sec:past_designs}). Also commit your design documents (block diagram + writeup) to \verb|docs|.
+
+  \item \textbf{\blockDiagramDueDate \space - \blockDiagramTaskName \space (\blockDiagramTimeAlloted)} - Draw a schematic of your processor's datapath and pipeline stages, and provide a brief write-up of your answers to the questions in ~\ref{sec:chkpt1_questions}. In addition, push all of your IO-circuit Verilog modules that you have implemented in the labs to your assigned GitHub repository under \verb|hardware/src/io_circuits| (see ~\ref{sec:past_designs}). Also commit your design documents (block diagram + write-up) to \verb|docs|.
   \item \textbf{\baseCPUDueDate \space - \baseCPUTaskName \space (\baseCPUTimeAlloted)} - Implement a fully functional RISC-V processor core in Verilog. Your processor core should be able to run the \textbf{mmult} demo successfully.
   
   %\item \textbf{\imageDueDate \space - \imageTaskName \space (\imageTimeAlloted)} - Implement an IO memory-mapped hardware-accelerated Convolutional Neural Network for LeNet inference.
   
   \item \textbf{\finalCheckoffDueDate \space - Final Checkoff + Demo} - Final processor optimization and checkoff
-  \item \textbf{\finalReportDueDate \space - Project Report} - Final report due
+  \item \textbf{\finalReportDueDate \space - Project Report} - Final report due.
+  
 \end{itemize}
+\vspace{2mm}
+\end{minipage}
+
 
 \subsection{General Project Tips}
 \label{tips}
@@ -113,7 +153,8 @@ Attempt extra features after everything works well.
 
 This project, as has been done in past semesters, will be divided into checkpoints. The following sections will specify the objectives for each checkpoint.
 
-\section{Checkpoints 1 \& 2 - 3-stage Pipelined RISC-V CPU}
+\newpage
+\section{Checkpoints 1 \& 2 - Three-stage Pipelined RISC-V CPU}
 The first checkpoint in this project is designed to guide the development of a three-stage pipelined RISC-V CPU that will be used as a base system in subsequent checkpoints.
 
 %\begin{figure}[hbt]
@@ -129,28 +170,29 @@ The first checkpoint in this project is designed to guide the development of a t
 %Finally, the fourth checkpoint will implement the power management unit in red.
 
 \subsection{Setting up your Code Repository}
-The project skeleton files are available on Github.
+The project skeleton files are available on GitHub. Your (private) project repo will be created by GSIs and assigned to your group. Its name will be in the format of \textbf{"sp22\_teamXX.git"}.
 The suggested way for initializing your repository with the skeleton files is as follows:
 
 \begin{minted}[tabsize=2]{bash}
-  git clone git@github.com:EECS150/project_skeleton_sp21.git
-  cd project_skeleton_sp21
-  git remote add my-repo git@github.com:EECS150/sp21_teamXX.git
+  git clone git@github.com:EECS150/project_skeleton_sp22.git
+  cd project_skeleton_sp22
+  git remote add my-repo git@github.com:EECS150/sp22_teamXX.git
   git push my-repo main
 \end{minted}
+
 
 Then reclone your repo and add the skeleton repo as a remote:
 \begin{minted}[tabsize=2]{bash}
   cd ..
-  rm -rf project_skeleton_sp21
-  git clone git@github.com:EECS150/sp21_teamXX.git
-  cd sp21_teamXX
-  git remote add staff git@github.com:EECS150/project_skeleton_sp21.git
+  rm -rf project_skeleton_sp22
+  git clone git@github.com:EECS150/sp22_teamXX.git
+  cd sp22_teamXX
+  git remote add staff git@github.com:EECS150/project_skeleton_sp22.git
 \end{minted}
 
 To pull project updates from the skeleton repo, run \verb|git pull staff main|.
 
-To get a team repo, fill the \href{https://docs.google.com/forms/d/1hOJek4q_Z6SokflpH17gOESGGCXmY1VfdJ5VLMNku1U}{Google form} with your team information (names, Github logins). Only one person in a team is required to fill the form.
+To get a team repo, fill the \href{https://docs.google.com/spreadsheets/d/1me8UbxdPkuWcUw25fGh9d9KCvhcWxplXCiFuPWfstoY/edit#gid=0}{Google form} with your team information (names, GitHub logins). Only one person in a team is required to fill the form.
 
 \textbf{You should check frequently for updates to the skeleton files.} Whenever you resume your work on the project,
 it is highly suggested that you do git pull from the skeleton repo to get the latest update.
@@ -178,7 +220,7 @@ We suggest you keep these with the provided source files in \verb|hardware/src/i
           \item \texttt{z1top.v}: Top level module. The RISC-V CPU is instantiated here.
           \item \texttt{riscv\_core/Riscv151.v}: All of your CPU datapath and control should be contained in this file.
           \item \texttt{io\_circuits}: Your IO circuits from previous lab exercises.
-          \item \texttt{EECS151.v}: Our EECS151-SP21 library file of register and memory modules. \textbf{You are expected to use these modules for your sequential logic}.
+          \item \texttt{EECS151.v}: Our EECS151-SP22 library file of register and memory modules. \textbf{You are expected to use these modules for your sequential logic}.
         \end{itemize}
       \item \texttt{sim}
         \begin{itemize}
@@ -321,7 +363,7 @@ To facilitate this, we will adopt a modified memory architecture shown in Figure
 
 \begin{figure}[hbt]
   \begin{center}
-    \includegraphics[width=0.8\textwidth]{memory_arch.pdf}
+    \includegraphics[width=0.8\textwidth]{images/memory_arch.pdf}
     \caption{The Riscv151 memory architecture. There is only 1 IMEM and DMEM instance in Riscv151 but their ports are shown separately in this figure for clarity. The left half of the figure shows the instruction fetch logic and the right half shows the memory load/store logic.}
     \label{fig:mem_arch}
   \end{center}
@@ -706,7 +748,7 @@ Your target CPI should not be greater than 1.2.
 If your CPI exceeds this value, you will need to modify your datapath and pipeline to reduce the number of bubbles inserted for resolving control hazards (since they are the only source of extra latency in our processor).
 This might involve performing naive branch prediction or moving the jalr address calculation to an earlier stage.
 
-\subsection{How to Survive This Checkpoint}
+\subsection{How to Succeed in This Checkpoint}
 Start early and work on your design incrementally.
 Draw up a very detailed and organised block diagram and keep it up to date as you begin writing Verilog.
 Unit test independent modules such as the control unit, ALU, and regfile.
@@ -718,7 +760,7 @@ However, do NOT under any circumstances share source code.
 
 Once you're tired, go home and \textit{sleep}. When you come back you will know how to solve your problem.
 
-\subsubsection{How To Get Started}
+\subsubsection{How to Get Started}
 It might seem overwhelming to implement all the functionality that your processor must support. The best way to implement your processor is in small increments, checking the correctness of your processor at each step along the way. Here is a guide that should help you plan out Checkpoint 1 and 2:
 
 \begin{enumerate}
@@ -746,7 +788,8 @@ The checkoff is divided into two stages: block diagram/design and implementation
 The second part will require significantly more time and effort than the first one.
 As such, completing the block diagram in time for the design review is crucial to your success in this project.
 
-\subsubsection{\blockDiagramTaskName: Block Diagram}
+\subsubsection{\blockDiagramTaskName}
+\textbf{Block Diagram}\\
 The first checkpoint requires a detailed block diagram of your datapath.
 The diagram should have a greater level of detail than a high level RISC datapath diagram.
 You may complete this electronically or by hand.
@@ -759,7 +802,7 @@ You should be able to describe in detail any smaller sub-blocks in your diagram.
 
 Additionally, you will be asked to provide short answers to the following questions based on how you structure your block diagram. The questions are intended to make you consider all possible cases that might happen when your processor execute instructions, such as data or control hazards. It might be a good idea to take a moment to think of the questions first, then draw your diagram to address them.
 
-\subsection{Questions}\label{sec:chkpt1_questions}
+\textbf{Questions}\label{sec:chkpt1_questions}
 \begin{enumerate}
 \item How many stages is the datapath you've drawn? (i.e. How many cycles does it take to execute 1 instruction?)
 \item How do you handle ALU $\rightarrow$ ALU hazards?
@@ -808,7 +851,7 @@ addi x1, x2, 100
 \item When do we read from BIOS for instructions? When do we read from IMem for instructions? How do we switch from BIOS address space to IMem address space? In which case can we write to IMem, and why do we need to write to IMem? How do we know if a memory instruction is intended for DMem or any IO device?
 \end{enumerate}
 
-Commit your block diagram and your writeup to your team repository under \verb|sp21_teamXX/docs| by \blockDiagramDueDate. Please also remember to push your working IO circuits to your Github repository.
+Commit your block diagram and your writeup to your team repository under \verb|sp22_teamXX/docs| by \blockDiagramDueDate. Please also remember to push your working IO circuits to your GitHub repository.
 
 \subsubsection{\baseCPUTaskName: Base RISCV151 System}
 This checkpoint requires a fully functioning three stage RISC-V CPU as described in this specification.
@@ -822,11 +865,11 @@ Additionally, please find the maximum achievable frequency of your CPU implement
 \begin{center}
   \begin{tabular}{m{45mm} m{40mm} m{70mm}}
     \toprule
-    \textbf{Deliverable} & \textbf{Due Date} & \textbf{Description} \\
+    \textbf{Deliverable} & \textbf{Due Date \newline(for all sections)} & \textbf{Description} \\
     \midrule
-    Block Diagram, RISC-V ISA Questions, IO code & \blockDiagramDueDate & Push your block diagram, your writeup, and IO code to your Github repository. \linebreak In-lab Checkoff: Sit down with a GSI and go over your design in detail. \\
+    Block Diagram, RISC-V ISA Questions, IO code & \blockDiagramDueDate & Push your block diagram, your write-up, and IO code to your GitHub repository. \linebreak In-lab Checkoff: Sit down with a GSI and go over your design in detail. \\
     \midrule
-    RISC-V CPU, Fmax and Crit. path & \baseCPUDueDate & Check in code to Github. \linebreak In-lab Checkoff: Demonstrate that the BIOS works, you can use \verb|hex_to_serial| to load the \verb|echo| program, \verb|jal| to it from the BIOS, and have that program successfully execute. Load the mmult program with \verb|hex_to_serial|, \verb|jal| to it, and have it execute successfully and return the benchmarking results and correct checksum. Your CPI should not be greater than 1.2\\
+    RISC-V CPU, Fmax and Crit. path & \baseCPUDueDate & Check in code to GitHub. \linebreak In-lab Checkoff: Demonstrate that the BIOS works, you can use \verb|hex_to_serial| to load the \verb|echo| program, \verb|jal| to it from the BIOS, and have that program successfully execute. Load the mmult program with \verb|hex_to_serial|, \verb|jal| to it, and have it execute successfully and return the benchmarking results and correct checksum. Your CPI should not be greater than 1.2\\
     \bottomrule
   \end{tabular}
 \end{center}
@@ -1487,12 +1530,12 @@ This is a circuit that can create a new clock from an existing clock with a user
 The \verb|clk_in1| input clock of the PLL is driven by the 125 MHz \verb|CLK_125MHZ_FPGA|.
 The frequency of \verb|clk_out1| is calculated as:
 \begin{equation*}
-  \mathtt{clk\_out1}\_f = \mathtt{clk\_in1}\_f \cdot \frac{\mathtt{CLKFBOUT\_MULT_F}}{\mathtt{DIVCLK\_DIVIDE} \cdot \mathtt{CLKOUT0\_DIVIDE}}
+  \mathtt{clk\_out1}\_f = \mathtt{clk\_in1}\_f \times \frac{\mathtt{CLKFBOUT\_MULT_F}}{\mathtt{DIVCLK\_DIVIDE} \times \mathtt{CLKOUT0\_DIVIDE}}
 \end{equation*}
 
 In our case we get:
 \begin{equation*}
-  \mathtt{clk\_out1}\_f = 125 \text{ MHz} \cdot \frac{8}{1 \cdot 20} = 50 \text{ MHz}
+  \mathtt{clk\_out1}\_f = 125 \text{ MHz} \times \frac{8}{1 \times 20} = 50 \text{ MHz}
 \end{equation*}
 
 You just need to change the local parameter \verb|CPU_CLOCK_PERIOD| in \verb|z1top.v| to set the target clock frequency for your CPU.
@@ -1636,7 +1679,7 @@ Not included in the above tabulations are point assignments for extra credit as 
 
 \newpage
 
-\appendix
+\begin{appendices}
 \section{Local Development}
 You can build the project on your laptop but there are a few dependencies to install.
 In addition to Vivado and Icarus Verilog, you need a RISC-V GCC cross compiler and an \verb|elf2hex| utility.
@@ -1671,6 +1714,7 @@ Clone the \verb|elf2hex| repo \verb|git clone git@github.com:sifive/elf2hex|.
 Follow the instructions in the \href{https://github.com/sifive/elf2hex}{elf2hex repo README} to build it from git.
 You should be able to run \verb|riscv64-unknown-elf-elf2hex| in a terminal.
 
+\pagebreak
 \section{BIOS}
 \label{sec:biosinfo}
 This section was written by Vincent Lee, Ian Juch, and Albert Magyar.
@@ -1764,7 +1808,7 @@ command to fix it.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.7\textwidth]{bios_flow.png}
+  \includegraphics[width=0.7\textwidth]{images/bios_flow.png}
   \caption{BIOS Execution Flow}
 \end{figure}
 
@@ -1822,7 +1866,7 @@ features, you can either add to the code in the \verb|bios151v3.c| file or creat
 header files. Note that you do not have access to standard c libraries so you will have to add
 them yourself if you need additional library functionality.
 
-\newpage
+\pagebreak
 \section{Debugging with Vivado Integrated Logic Analyzer}
 \label{sec:vivado_ila}
 
@@ -1831,24 +1875,24 @@ Vivado Integrated Logic Analyzer (ILA) features board-level debugging: you will 
 Inspect the file \verb|src/accelerator/axi_mm_adapter.v|. Some AXI signals are annotated with \verb|(* mark_debug = "true" *)|. This tells Vivado not to trim or optimize away these signals, and that they can be monitored/probed during debugging session. Open your Vivado project in GUI mode (make sure your project finished the Synthesis step). In the \emph{Flow Navigator} panel, under \emph{Synthesis}, click \emph{Set Up Debug}.
 
 \begin{center}
-\fbox{\includegraphics[width=0.7\textwidth]{images/vivado_ila1.png}}
+\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ila1.png}}
 \end{center}
 
 A wizard pops up to help you setup your debugging session. Click \emph{Next}. The list of signals marked with debug attributes are shown. You can also add other signals in this wizard by selecting \emph{Find Nets to Add}. Notice the clock domain for each signal: this clock is used to sample debug data for the signal. Click \emph{Next}.
 
 \begin{center}
-\fbox{\includegraphics[width=0.7\textwidth]{images/vivado_ila2.png}}
+\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ila2.png}}
 \end{center}
 
 In this wizard, we will set the depth of the captured data (number of debug/captured data items) for our debugged signals. The bigger the depth value, the more debug data (or the longer the runtime) can be captured. However, since a debug core uses Block RAMs to store the captured data, your implementation might run out of on-chip memory storage if you set the depth too big. The debug cores actually consume resources; they are not free, so you should always be mindful of the current resource utilization of your design. In addition, make sure \emph{Capture control} and \emph{Advanced trigger} are checked. Hit \emph{Next}, and finally hit \emph{Finish} on the \textit{Set up Debug Summary} page to close the wizard.
 
 \begin{center}
-\fbox{\includegraphics[width=0.7\textwidth]{images/vivado_ila3.png}}
+\fbox{\includegraphics[width=0.8\textwidth]{images/vivado_ila3.png}}
 \end{center}
 Now, we generate a new bitstream with the debug ILA cores: \emph{Generate Bitstream}. Vivado will ask where we should save the debug constraints. Select \emph{Create a new file} as in the following picture to avoid overwriting the existing constraint file. Click \emph{OK} to finish the debug setup. 
 
 \begin{center}
-\fbox{\includegraphics[width=0.4\textwidth]{images/vivado_ila4.png}}
+\fbox{\includegraphics[width=0.8\textwidth]{images/vivado_ila4.png}}
 \end{center}
 
 After bitstream generation, we connect and program the FPGA as usual. This time, you will see that, in addition to the bitstream file, we also load the debug probes file. But before doing that, we need to initialize the ARM core (or the Zynq PS) by running the following command
@@ -1858,48 +1902,48 @@ After bitstream generation, we connect and program the FPGA as usual. This time,
 Otherwise, this would not work, since our logic receives the clock signal from the Zynq PS.
 
 \begin{center}
-\fbox{\includegraphics[width=0.4\textwidth]{images/vivado_ila5.png}}
+\fbox{\includegraphics[width=0.8\textwidth]{images/vivado_ila5.png}}
 \end{center}
 
 The waveform pane will show up after we program the FPGA with the probes file. This waveform window looks like the Simulation waveform window, but the cool thing is that we can setup trigger event to ignite the transitions of the signals we are concerning with. To do so, in the \emph{Trigger Setup - hw\_ila\_1} pane, click the plus button to add probes.
 
 \begin{center}
-\fbox{\includegraphics[width=0.8\textwidth]{images/vivado_ila6.png}}
+\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ila6.png}}
 \end{center}
 
 Select the signal \verb|wlast| from the popped-up window. Now, we will set the trigger condition. Also in the \emph{Trigger Setup - hw\_ila\_1} pane, select \emph{1 (logical one)} for the \emph{Value} column. The remaining columns can be kept unchanged. Essentially, we are comparing \verb|wlast| to 1: if the comparison is true (the last write data of an AXI Write transaction is sent to the bus), this will trigger the ILA cores.
 
 \begin{center}
-\fbox{\includegraphics[width=0.8\textwidth]{images/vivado_ila7.png}}
+\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ila7.png}}
 \end{center}
 
 Now, in the \emph{Status - hw\_ila\_1} pane, click the play button ("Run trigger for this ILA core"). It runs until waiting for trigger (50\%). To complete the core execution, we will provide a \textbf{real} trigger. To that end, the \verb|software/axi_test| program is used as a demo. Go to \verb|software/axi_test|, do \texttt{make run} to load the assembly instruction of the program to your CPU's Memory blocks. Then open the screen program, and do \texttt{jal 10000000} to execute the program.
 
 \begin{center}
-\fbox{\includegraphics[width=0.7\textwidth]{images/vivado_ila8.png}}
+\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ila8.png}}
 \end{center}
 
 This will start the DMA execution, which in turn sends the AXI write transaction, and then triggers the ILA core. Now you will see the waveform updated! This is all happening when your PYNQ board is actually running.
 
 \begin{center}
-\fbox{\includegraphics[width=0.7\textwidth]{images/vivado_ila9.png}}
+\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ila9.png}}
 \end{center}
 
 Let's take a closer look at the waveform to understand what just happened. The red marker indicates when the triggger condition is met (i.e, \verb|wlast| became HIGH). On the write transaction, we can see a burst write of four 32-bit data items. This matches what is written in the \verb|axi_test| program, as we are sending an array of 16 8-bit items on the 32-bit AXI data bus. On the read transaction, a burst read of four 32-bit data items is received, which confirms our expectation from the software program too. Also notice that latency between the read request fire (valid and ready are both HIGH) and the first read data response fire (from the second blue marker to the yellow marker). This is the off-chip read latency from the DRAM to our DMA engine on the FPGA (roughly 32 cycles in this case).
 
 \begin{center}
-\fbox{\includegraphics[width=0.6\textwidth]{images/vivado_ila10.png}}
+\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ila10.png}}
 \end{center}
 
 We can also observe that the read data matches the write data.
 
 \begin{center}
-\fbox{\includegraphics[width=0.5\textwidth]{images/vivado_ila11.png}}
+\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ila11.png}}
 \end{center}
 
 Try modifying the axi test program to test different scenarios until you understand how the bus works (e.g., increasing the DMA transfer length, or sending/receiving 32-bit data instead of 8-bit). Hopefully this example demonstrates to you how to use ILA to get meaningful messages in real time to debug your implementation.
 
-\newpage
+\pagebreak
 \section{Using Vivado IP Integrator for Block Design with Zynq Processing System}
 \label{sec:vivado_bd}
 
@@ -1908,7 +1952,7 @@ This appendix shows you how to use Vivado IP Integrator (IPI) to build a Vivado 
 As with many other Xilinx Zynq System-on-Chip platforms, the Zynq chip of our PYNQ-Z1 board consists of the Processing System part (PS) and the Programmable Logic part (PL) loosely coupled via the AXI bus. The Zynq PS contains the ARM cores controlling many hardware peripheral blocks as well as interfacing with the off-chip DRAM. For a user logic implemented in the PL, to communicate with the off-chip DRAM, it needs to talk to the Zynq PS using the AXI protocol. The user logic acts as an AXI master (initiates the bus transaction), and the Zynq PS is an AXI slave (services the transaction). To achieve high memory bandwidth, the Zynq PS provides four High-Performance AXI slave ports (HP). In some cases, an application running on the ARM cores may want to control or check the status of the user logic in the PL; that could be done with a lighter and low-bandwidth AXI bus (AXI-Lite) managed by the Zynq PS's general-purpose port (GP). This is the typical accelerator offload execution model in which a host processor offloads compute-intensive tasks to an accelerator (implemented in the Programmable Logic); there are numerous \href{http://www.pynq.io/examples}{PYNQ design examples} following this practice from which you can learn more if you're interested.
 
 \begin{center}
-\fbox{\includegraphics[width=1.0\textwidth]{images/vivado_ipi0.png}}
+\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi0.png}}
 \end{center}
 
 The setting in Checkpoint 3 is similar to this model in some sense. However, we use the RISC-V processor implemented in Checkpoint 2 instead of the ARM cores as the host processor to control the accelerator (xcel) and the DMA engine; the ARM processors are merely used to initialize the network data (images, weights, labels) in the main memory. Since the RISC-V core is implemented in the PL, we often refer to the term \textit{soft processor} to distinguish it from the \textit{hard processors} such as ARM cores.
@@ -1917,35 +1961,35 @@ We begin by creating a Vivado project as usual, then add all the source files un
 Next, click \emph{Open Block Design} under \emph{IP Integrator}. Type the Design name (or just leave the default name), then click \emph{OK}.
 
 \begin{center}
-\fbox{\includegraphics[width=0.8\textwidth]{images/vivado_ipi2.png}}
+\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi2.png}}
 \end{center}
 
 Next, on the Block Design canvas, right click, then type \texttt{Zynq Processing System} so that it appears on the drop-down menu, then add it to the canvas.
 
 \begin{center}
-\fbox{\includegraphics[width=0.8\textwidth]{images/vivado_ipi3.png}}
+\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi3.png}}
 \end{center}
 
 On the green bar of the canvas, click on \emph{Run Block Automation}. A window will pop up, just click \emph{OK} to apply the default setting. This step automates the connection of the Zynq PS IP with the DDR as well as applying the board preset parameters defined in the board files.
 
 \begin{center}
-\fbox{\includegraphics[width=0.8\textwidth]{images/vivado_ipi4.png}}
+\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi4.png}}
 \end{center}
 
 We can customize the Zynq IP by double-clicking on the IP. In the popped-up window, select tab \texttt{PS-PL Configuration}, expand the tab \texttt{HP Slave AXI Interface}, make sure to tick the \texttt{S AXI HP0 Interface}. This will enable the HP0 slave port of the IP. And since we are not using the ARM cores to control the accelerator, the General Purpose port is not necessary, so we can untick that option under the tab \texttt{AXI Non Secure Enablement} $\rightarrow$ \texttt{GP Master AXI Interface}.
 
 \begin{center}
-\fbox{\includegraphics[width=0.8\textwidth]{images/vivado_ipi6.png}}
+\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi6.png}}
 \end{center}
 
 \begin{center}
-\fbox{\includegraphics[width=0.8\textwidth]{images/vivado_ipi9.png}}
+\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi9.png}}
 \end{center}
 
 Be sure to set the clock frequency of the Zynq PS as well, since the Zynq PS will generate the clock signal for the modules implemented in the programmable fabric. Also in the \texttt{Re-customize IP} window, select \texttt{Clock Configuration} $\rightarrow$ \texttt{PL Fabric clock}, set the \verb|FCLK_CLK0| clock requested frequency to 50MH (or any target clock you want to apply).
 
 \begin{center}
-\fbox{\includegraphics[width=0.8\textwidth]{images/vivado_ipi10.png}}
+\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi10.png}}
 \end{center}
 
 After we're done with the Zynq PS IP customization, click \emph{OK} to apply the changes.
@@ -1953,55 +1997,55 @@ After we're done with the Zynq PS IP customization, click \emph{OK} to apply the
 Next, add our source files to the Block Design canvas. Under the \texttt{Sources} pane, right click on \texttt{z1top\_axi}, then choose \emph{Add Module to Block Design}. This will add \verb|z1top_axi| to the Block Design canvas.
 
 \begin{center}
-\fbox{\includegraphics[width=0.8\textwidth]{images/vivado_ipi5.png}}
+\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi5.png}}
 \end{center}
 
 Vivado will suggest some design assistance in the green bar. Click on \emph{Run Connection Automation}, then tick all the boxes in the popped-up window as follows to let Vivado manage the connections between the IPs and our \verb|z1top_axi| module, then hit \emph{OK} to close the window.
 
 \begin{center}
-\fbox{\includegraphics[width=0.8\textwidth]{images/vivado_ipi7.png}}
+\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi7.png}}
 \end{center}
 
 The block connection should look like this. The AXI interface of the \verb|z1top_axi| module connects to port \texttt{S-HP0} of the Zynq PS via the SmartConnect IP. The SmartConnect IPs handles data-width conversion as well as protocol conversion (AXI4 $\leftrightarrow$ AXI3) to ensure that the bus transactions get requested and responsed correctly between the connected modules. There's another IP block named \texttt{Processor System Reset} which essentially generates the proper reset signal for the AXI bus logic of the IPs and ensures everything synchronized properly with the Zynq PS.
 
 \begin{center}
-\fbox{\includegraphics[width=0.8\textwidth]{images/vivado_ipi8.png}}
+\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi8.png}}
 \end{center}
 
 Next, double click on the AXI interface of the \verb|z1top_axi|: \verb|aximm| to customize it. In the \texttt{Frequency} field, change the default value to \texttt{50000000} to match the requested clock frequency from the Zynq PS. This step is needed, otherwise Vivado will complain about frequency mismatch between different modules.
 
 \begin{center}
-\fbox{\includegraphics[width=0.8\textwidth]{images/vivado_ipi11.png}}
+\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi11.png}}
 \end{center}
 
-Next, click on the ports \verb|CLK_125MHZ_FPGA|, \verb|BUTTONS[3:0]|, \verb|SWITCHES[1:0]|, \verb|LEDS[1:0]|. Right click and select \emph{Make External}. Vivado will create the block design's input and output pins connectting to those ports. Rename the external IO ports (drop the suffix \verb|_0|) to match the port names defined in the constraint file.
+Next, click on the ports \verb|CLK_125MHZ_FPGA|, \verb|BUTTONS[3:0]|, \verb|SWITCHES[1:0]|, \verb|LEDS[1:0]|. Right click and select \emph{Make External}. Vivado will create the block design's input and output pins connecting to those ports. Rename the external IO ports (drop the suffix \verb|_0|) to match the port names defined in the constraint file.
 
 \begin{center}
-\fbox{\includegraphics[width=0.8\textwidth]{images/vivado_ipi12.png}}
+\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi12.png}}
 \end{center}
 
 Next, under the \texttt{Sources} pane, right click on the block design file (\verb|design_1|), select \emph{Create HDL Wrapper} to create an RTL wrapper for the block design. Just let Vivado manage wrapper and auto-update.
 
 \begin{center}
-\fbox{\includegraphics[width=0.8\textwidth]{images/vivado_ipi13.png}}
+\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi13.png}}
 \end{center}
 
 Switch to the tab \texttt{Address Editor}, check if the AXIMM port of our user logic is mapped properly to the DRAM's memory address space.
 
 \begin{center}
-\fbox{\includegraphics[width=0.8\textwidth]{images/vivado_ipi16.png}}
+\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi16.png}}
 \end{center}
 
 The final block design should be as follows.
 
 \begin{center}
-\fbox{\includegraphics[width=0.8\textwidth]{images/vivado_ipi15.png}}
+\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi15.png}}
 \end{center}
 
 Click the \emph{Validate Design} button to validate the design to see if there is any outstanding issue. We can safely ignore the warning related to the SmartConnect IP on the common clock source. Save the design and generate the bitstream as how we usually do. After the bitstream is generated, we need to generate the Hardware Description File (hdf) so that we can bootstrap the ARM processors later. Click \emph{File} $\rightarrow$ \emph{Export} $\rightarrow$ \emph{Export Hardware}. Save the file to \verb|hardware/bitstream_files/sdk|.
 
 \begin{center}
-\fbox{\includegraphics[width=0.8\textwidth]{images/vivado_ipi17.png}}
+\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi17.png}}
 \end{center}
 
 
@@ -2012,7 +2056,7 @@ exec unzip -o bitstream_files/sdk/design_1_wrapper.hdf -d bitstream_files/sdk
 \end{verbatim}
 
 \begin{center}
-\fbox{\includegraphics[width=0.8\textwidth]{images/vivado_ipi19.png}}
+\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi19.png}}
 \end{center}
 
 to extract the files needed to bootstrap the ARM cores. Then we can run
@@ -2024,6 +2068,7 @@ This script will initialize the Zynq PS with the ps7 files generated from the Ha
 The final step is programming the FPGA with the generated bitstream as usual.
 
 Remember that whenever you change a source file, click \textbf{Refresh Changed Modules} in the Block Design window so that the changes are effective when you implement your design the next time. Also note that we only need to run the script \verb|init-arm| whenever a new clock is applied (and hence a new set of ps7 files), or the board is just turned on.
+\end{appendices}
 
 \end{document}
 
