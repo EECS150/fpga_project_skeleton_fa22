@@ -1,6 +1,6 @@
 # EECS 151/251A FPGA Project Skeleton for Spring 2022
 
-**Checkpoint 1:** 3-stage RISC-V (rv32ui) Processor Block Design Diagram
+**Checkpoint 1:** 3-stage RISC-V (rv32ui) Processor Block Design Diagram & Questions
 
 **Checkpoint 2:** Fully functional 3-stage RISC-V (rv32ui) Processor
 
