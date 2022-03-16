@@ -103,7 +103,6 @@ Department of Electrical Engineering and Computer Science \\
 \section{Introduction}
 The goal of this project is to familiarize EECS151/251A students with the methods and tools of digital design.
 Working alone or in a team of two, you will design and implement a 3-stage pipelined RISC-V CPU with a UART for tethering.
-Afterwards, you will build a hardware accelerator to accelerate a small Convolutional Neural Network and do a system integration with your RISC-V CPU.
 
 Finally, you will optimize your CPU for performance (maximizing the Iron Law) and cost (FPGA resource utilization).
 
@@ -1492,6 +1491,7 @@ Additionally, please find the maximum achievable frequency of your CPU implement
 
 Checkpoint 3 is an optimization checkpoint lumped with the final checkoff.
 This part of the project is designed to give students freedom to implement the optimizations of their choosing to improve the performance of their processor.
+\textbf{251 students must implement branch prediction (details listed in section 4).}
 
 The optimization goal for this project is to minimize the \textbf{execution time} on the \verb|mmult| program, as defined by the 'Iron Law' of Processor Performance.
 
@@ -1653,7 +1653,7 @@ Teams that have completed the base set of requirements are eligible to receive e
 
 The following are suggested projects that may or may not be feasible in one week.
 \begin{itemize}
-  \item Branch Predictor: Implement a two bit (or more complicated) branch predictor with a branch history table (BHT) to replace the naive 'always taken' predictor used in the project
+  \item Branch Predictor \textbf{(required for 251 students)}: Implement a two bit (or more complicated) branch predictor with a branch history table (BHT) to replace the naive 'always taken' predictor used in the project
   \item 5-Stage Pipeline: Add more pipeline stages and push the clock frequency past 100MHz
   \item RISC-V M Extension: Extend the processor with a hardware multiplier and divider
   \item Everything 100MHz or beyond: Push the frequency of the full \verb|z1top| to 100MHz or better.
@@ -1665,9 +1665,9 @@ When the time is right, if you are interested in implementing any of these, see 
 \label{deadlinegrading}
 
 \begin{description}
-  \item[80\%] {Functionality} at project due date. You will demonstrate the functionality of your processor during the final interview.
-  \item[5\%] {Optimization} at project due date. This score is contingent on implementing all the required functionality. An incomplete project will receive a zero in this category.
-  \item[5\%] {Checkpoint} functionality. You are graded on functionality for each completed checkpoint. The total of these scores makes up 5\% of your project grade. The weight of each checkpoint's score may vary.
+  \item[70\%] {Functionality} at project due date. You will demonstrate the functionality of your processor during the final interview.
+  \item[15\%] {Optimization} at final project due date. This score is contingent on implementing all the required functionality. An incomplete project will receive a zero in this category.
+  \item[5\%] {Checkpoint} functionality. You are graded on functionality for each completed checkpoint at the checkpoint deadline. The total of these scores makes up 5\% of your project grade. The weight of each checkpoint's score may vary.
   \item[10\%] {Final report} and {style} demonstrated throughout the project.
 \end{description}
 
@@ -1867,207 +1867,6 @@ header files. Note that you do not have access to standard c libraries so you wi
 them yourself if you need additional library functionality.
 
 \pagebreak
-\section{Debugging with Vivado Integrated Logic Analyzer}
-\label{sec:vivado_ila}
-
-Vivado Integrated Logic Analyzer (ILA) features board-level debugging: you will be able to load your bitstream, run your FPGA, interact with the board via external IO sources (buttons, keys pressed, UARTs, etc.), and observe the waveform updated in real time! This could help you to catch bugs that might not be visible during simulation, since now you actually run your implementation on the FPGA. This powerful feature also helps you in situations where your FPGA has to interface with an external source (such as the off-chip DRAM memory), and you are uncertain if its behavior meets your assumption. This section aims to give you a short walkthrough to how to use Vivado ILA to debug your AXI Read and Write logic in your Accelerator. To learn more about Vivado ILA, refer to \href{https://www.xilinx.com/support/documentation/sw_manuals/xilinx2019_2/ug908-vivado-programming-debugging.pdf}{Vivado Programming and Debugging}.
-
-Inspect the file \verb|src/accelerator/axi_mm_adapter.v|. Some AXI signals are annotated with \verb|(* mark_debug = "true" *)|. This tells Vivado not to trim or optimize away these signals, and that they can be monitored/probed during debugging session. Open your Vivado project in GUI mode (make sure your project finished the Synthesis step). In the \emph{Flow Navigator} panel, under \emph{Synthesis}, click \emph{Set Up Debug}.
-
-\begin{center}
-\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ila1.png}}
-\end{center}
-
-A wizard pops up to help you setup your debugging session. Click \emph{Next}. The list of signals marked with debug attributes are shown. You can also add other signals in this wizard by selecting \emph{Find Nets to Add}. Notice the clock domain for each signal: this clock is used to sample debug data for the signal. Click \emph{Next}.
-
-\begin{center}
-\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ila2.png}}
-\end{center}
-
-In this wizard, we will set the depth of the captured data (number of debug/captured data items) for our debugged signals. The bigger the depth value, the more debug data (or the longer the runtime) can be captured. However, since a debug core uses Block RAMs to store the captured data, your implementation might run out of on-chip memory storage if you set the depth too big. The debug cores actually consume resources; they are not free, so you should always be mindful of the current resource utilization of your design. In addition, make sure \emph{Capture control} and \emph{Advanced trigger} are checked. Hit \emph{Next}, and finally hit \emph{Finish} on the \textit{Set up Debug Summary} page to close the wizard.
-
-\begin{center}
-\fbox{\includegraphics[width=0.8\textwidth]{images/vivado_ila3.png}}
-\end{center}
-Now, we generate a new bitstream with the debug ILA cores: \emph{Generate Bitstream}. Vivado will ask where we should save the debug constraints. Select \emph{Create a new file} as in the following picture to avoid overwriting the existing constraint file. Click \emph{OK} to finish the debug setup. 
-
-\begin{center}
-\fbox{\includegraphics[width=0.8\textwidth]{images/vivado_ila4.png}}
-\end{center}
-
-After bitstream generation, we connect and program the FPGA as usual. This time, you will see that, in addition to the bitstream file, we also load the debug probes file. But before doing that, we need to initialize the ARM core (or the Zynq PS) by running the following command
-
-\texttt{make init-arm}
-
-Otherwise, this would not work, since our logic receives the clock signal from the Zynq PS.
-
-\begin{center}
-\fbox{\includegraphics[width=0.8\textwidth]{images/vivado_ila5.png}}
-\end{center}
-
-The waveform pane will show up after we program the FPGA with the probes file. This waveform window looks like the Simulation waveform window, but the cool thing is that we can setup trigger event to ignite the transitions of the signals we are concerning with. To do so, in the \emph{Trigger Setup - hw\_ila\_1} pane, click the plus button to add probes.
-
-\begin{center}
-\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ila6.png}}
-\end{center}
-
-Select the signal \verb|wlast| from the popped-up window. Now, we will set the trigger condition. Also in the \emph{Trigger Setup - hw\_ila\_1} pane, select \emph{1 (logical one)} for the \emph{Value} column. The remaining columns can be kept unchanged. Essentially, we are comparing \verb|wlast| to 1: if the comparison is true (the last write data of an AXI Write transaction is sent to the bus), this will trigger the ILA cores.
-
-\begin{center}
-\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ila7.png}}
-\end{center}
-
-Now, in the \emph{Status - hw\_ila\_1} pane, click the play button ("Run trigger for this ILA core"). It runs until waiting for trigger (50\%). To complete the core execution, we will provide a \textbf{real} trigger. To that end, the \verb|software/axi_test| program is used as a demo. Go to \verb|software/axi_test|, do \texttt{make run} to load the assembly instruction of the program to your CPU's Memory blocks. Then open the screen program, and do \texttt{jal 10000000} to execute the program.
-
-\begin{center}
-\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ila8.png}}
-\end{center}
-
-This will start the DMA execution, which in turn sends the AXI write transaction, and then triggers the ILA core. Now you will see the waveform updated! This is all happening when your PYNQ board is actually running.
-
-\begin{center}
-\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ila9.png}}
-\end{center}
-
-Let's take a closer look at the waveform to understand what just happened. The red marker indicates when the triggger condition is met (i.e, \verb|wlast| became HIGH). On the write transaction, we can see a burst write of four 32-bit data items. This matches what is written in the \verb|axi_test| program, as we are sending an array of 16 8-bit items on the 32-bit AXI data bus. On the read transaction, a burst read of four 32-bit data items is received, which confirms our expectation from the software program too. Also notice that latency between the read request fire (valid and ready are both HIGH) and the first read data response fire (from the second blue marker to the yellow marker). This is the off-chip read latency from the DRAM to our DMA engine on the FPGA (roughly 32 cycles in this case).
-
-\begin{center}
-\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ila10.png}}
-\end{center}
-
-We can also observe that the read data matches the write data.
-
-\begin{center}
-\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ila11.png}}
-\end{center}
-
-Try modifying the axi test program to test different scenarios until you understand how the bus works (e.g., increasing the DMA transfer length, or sending/receiving 32-bit data instead of 8-bit). Hopefully this example demonstrates to you how to use ILA to get meaningful messages in real time to debug your implementation.
-
-\pagebreak
-\section{Using Vivado IP Integrator for Block Design with Zynq Processing System}
-\label{sec:vivado_bd}
-
-This appendix shows you how to use Vivado IP Integrator (IPI) to build a Vivado project for Checkpoint 3 that involves the Zynq Processing System IP.
-
-As with many other Xilinx Zynq System-on-Chip platforms, the Zynq chip of our PYNQ-Z1 board consists of the Processing System part (PS) and the Programmable Logic part (PL) loosely coupled via the AXI bus. The Zynq PS contains the ARM cores controlling many hardware peripheral blocks as well as interfacing with the off-chip DRAM. For a user logic implemented in the PL, to communicate with the off-chip DRAM, it needs to talk to the Zynq PS using the AXI protocol. The user logic acts as an AXI master (initiates the bus transaction), and the Zynq PS is an AXI slave (services the transaction). To achieve high memory bandwidth, the Zynq PS provides four High-Performance AXI slave ports (HP). In some cases, an application running on the ARM cores may want to control or check the status of the user logic in the PL; that could be done with a lighter and low-bandwidth AXI bus (AXI-Lite) managed by the Zynq PS's general-purpose port (GP). This is the typical accelerator offload execution model in which a host processor offloads compute-intensive tasks to an accelerator (implemented in the Programmable Logic); there are numerous \href{http://www.pynq.io/examples}{PYNQ design examples} following this practice from which you can learn more if you're interested.
-
-\begin{center}
-\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi0.png}}
-\end{center}
-
-The setting in Checkpoint 3 is similar to this model in some sense. However, we use the RISC-V processor implemented in Checkpoint 2 instead of the ARM cores as the host processor to control the accelerator (xcel) and the DMA engine; the ARM processors are merely used to initialize the network data (images, weights, labels) in the main memory. Since the RISC-V core is implemented in the PL, we often refer to the term \textit{soft processor} to distinguish it from the \textit{hard processors} such as ARM cores.
-
-We begin by creating a Vivado project as usual, then add all the source files under \verb|hardware/src| (excluding \verb|hardware/src/z1top.v| and \verb|hardware/src/clk_wiz.v|).
-Next, click \emph{Open Block Design} under \emph{IP Integrator}. Type the Design name (or just leave the default name), then click \emph{OK}.
-
-\begin{center}
-\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi2.png}}
-\end{center}
-
-Next, on the Block Design canvas, right click, then type \texttt{Zynq Processing System} so that it appears on the drop-down menu, then add it to the canvas.
-
-\begin{center}
-\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi3.png}}
-\end{center}
-
-On the green bar of the canvas, click on \emph{Run Block Automation}. A window will pop up, just click \emph{OK} to apply the default setting. This step automates the connection of the Zynq PS IP with the DDR as well as applying the board preset parameters defined in the board files.
-
-\begin{center}
-\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi4.png}}
-\end{center}
-
-We can customize the Zynq IP by double-clicking on the IP. In the popped-up window, select tab \texttt{PS-PL Configuration}, expand the tab \texttt{HP Slave AXI Interface}, make sure to tick the \texttt{S AXI HP0 Interface}. This will enable the HP0 slave port of the IP. And since we are not using the ARM cores to control the accelerator, the General Purpose port is not necessary, so we can untick that option under the tab \texttt{AXI Non Secure Enablement} $\rightarrow$ \texttt{GP Master AXI Interface}.
-
-\begin{center}
-\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi6.png}}
-\end{center}
-
-\begin{center}
-\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi9.png}}
-\end{center}
-
-Be sure to set the clock frequency of the Zynq PS as well, since the Zynq PS will generate the clock signal for the modules implemented in the programmable fabric. Also in the \texttt{Re-customize IP} window, select \texttt{Clock Configuration} $\rightarrow$ \texttt{PL Fabric clock}, set the \verb|FCLK_CLK0| clock requested frequency to 50MH (or any target clock you want to apply).
-
-\begin{center}
-\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi10.png}}
-\end{center}
-
-After we're done with the Zynq PS IP customization, click \emph{OK} to apply the changes.
-
-Next, add our source files to the Block Design canvas. Under the \texttt{Sources} pane, right click on \texttt{z1top\_axi}, then choose \emph{Add Module to Block Design}. This will add \verb|z1top_axi| to the Block Design canvas.
-
-\begin{center}
-\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi5.png}}
-\end{center}
-
-Vivado will suggest some design assistance in the green bar. Click on \emph{Run Connection Automation}, then tick all the boxes in the popped-up window as follows to let Vivado manage the connections between the IPs and our \verb|z1top_axi| module, then hit \emph{OK} to close the window.
-
-\begin{center}
-\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi7.png}}
-\end{center}
-
-The block connection should look like this. The AXI interface of the \verb|z1top_axi| module connects to port \texttt{S-HP0} of the Zynq PS via the SmartConnect IP. The SmartConnect IPs handles data-width conversion as well as protocol conversion (AXI4 $\leftrightarrow$ AXI3) to ensure that the bus transactions get requested and responsed correctly between the connected modules. There's another IP block named \texttt{Processor System Reset} which essentially generates the proper reset signal for the AXI bus logic of the IPs and ensures everything synchronized properly with the Zynq PS.
-
-\begin{center}
-\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi8.png}}
-\end{center}
-
-Next, double click on the AXI interface of the \verb|z1top_axi|: \verb|aximm| to customize it. In the \texttt{Frequency} field, change the default value to \texttt{50000000} to match the requested clock frequency from the Zynq PS. This step is needed, otherwise Vivado will complain about frequency mismatch between different modules.
-
-\begin{center}
-\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi11.png}}
-\end{center}
-
-Next, click on the ports \verb|CLK_125MHZ_FPGA|, \verb|BUTTONS[3:0]|, \verb|SWITCHES[1:0]|, \verb|LEDS[1:0]|. Right click and select \emph{Make External}. Vivado will create the block design's input and output pins connecting to those ports. Rename the external IO ports (drop the suffix \verb|_0|) to match the port names defined in the constraint file.
-
-\begin{center}
-\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi12.png}}
-\end{center}
-
-Next, under the \texttt{Sources} pane, right click on the block design file (\verb|design_1|), select \emph{Create HDL Wrapper} to create an RTL wrapper for the block design. Just let Vivado manage wrapper and auto-update.
-
-\begin{center}
-\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi13.png}}
-\end{center}
-
-Switch to the tab \texttt{Address Editor}, check if the AXIMM port of our user logic is mapped properly to the DRAM's memory address space.
-
-\begin{center}
-\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi16.png}}
-\end{center}
-
-The final block design should be as follows.
-
-\begin{center}
-\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi15.png}}
-\end{center}
-
-Click the \emph{Validate Design} button to validate the design to see if there is any outstanding issue. We can safely ignore the warning related to the SmartConnect IP on the common clock source. Save the design and generate the bitstream as how we usually do. After the bitstream is generated, we need to generate the Hardware Description File (hdf) so that we can bootstrap the ARM processors later. Click \emph{File} $\rightarrow$ \emph{Export} $\rightarrow$ \emph{Export Hardware}. Save the file to \verb|hardware/bitstream_files/sdk|.
-
-\begin{center}
-\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi17.png}}
-\end{center}
-
-
-Next, under the \texttt{TCL Console}, type the command
-
-\begin{verbatim}
-exec unzip -o bitstream_files/sdk/design_1_wrapper.hdf -d bitstream_files/sdk
-\end{verbatim}
-
-\begin{center}
-\fbox{\includegraphics[width=0.9\textwidth]{images/vivado_ipi19.png}}
-\end{center}
-
-to extract the files needed to bootstrap the ARM cores. Then we can run
-
-\texttt{make init-arm}
-
-This script will initialize the Zynq PS with the ps7 files generated from the Hardware Description file, including setting the clock frequency as requested when we configure the Zynq PS, among other things. It then launches the baremetal binary application \verb|arm_baremetal_app/system/Debug/system.elf| to initialize the network weights, images, and labels to the DRAM.
-
-The final step is programming the FPGA with the generated bitstream as usual.
-
-Remember that whenever you change a source file, click \textbf{Refresh Changed Modules} in the Block Design window so that the changes are effective when you implement your design the next time. Also note that we only need to run the script \verb|init-arm| whenever a new clock is applied (and hence a new set of ps7 files), or the board is just turned on.
 \end{appendices}
 
 \end{document}
