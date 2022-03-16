@@ -169,13 +169,13 @@ The first checkpoint in this project is designed to guide the development of a t
 %Finally, the fourth checkpoint will implement the power management unit in red.
 
 \subsection{Setting up your Code Repository}
-The project skeleton files are available on GitHub. Your (private) project repo will be created by GSIs and assigned to your group. Its name will be in the format of \textbf{"sp22\_teamXX.git"}.
+The project skeleton files are available on GitHub. Your (private) project repo will be created by GSIs and assigned to your group. Its name will be in the format of \textbf{"sp22\_fpga\_teamXX.git"}.
 The suggested way for initializing your repository with the skeleton files is as follows:
 
 \begin{minted}[tabsize=2]{bash}
   git clone git@github.com:EECS150/project_skeleton_sp22.git
   cd project_skeleton_sp22
-  git remote add my-repo git@github.com:EECS150/sp22_teamXX.git
+  git remote add my-repo git@github.com:EECS150/sp22_fpga_teamXX.git
   git push my-repo main
 \end{minted}
 
@@ -184,8 +184,8 @@ Then reclone your repo and add the skeleton repo as a remote:
 \begin{minted}[tabsize=2]{bash}
   cd ..
   rm -rf project_skeleton_sp22
-  git clone git@github.com:EECS150/sp22_teamXX.git
-  cd sp22_teamXX
+  git clone git@github.com:EECS150/sp22_fpga_teamXX.git
+  cd sp22_fpga_teamXX
   git remote add staff git@github.com:EECS150/project_skeleton_sp22.git
 \end{minted}
 
@@ -850,7 +850,7 @@ addi x1, x2, 100
 \item When do we read from BIOS for instructions? When do we read from IMem for instructions? How do we switch from BIOS address space to IMem address space? In which case can we write to IMem, and why do we need to write to IMem? How do we know if a memory instruction is intended for DMem or any IO device?
 \end{enumerate}
 
-Commit your block diagram and your writeup to your team repository under \verb|sp22_teamXX/docs| by \blockDiagramDueDate. Please also remember to push your working IO circuits to your GitHub repository.
+Commit your block diagram and your writeup to your team repository under \verb|sp22_fpga_teamXX/docs| by \blockDiagramDueDate. Please also remember to push your working IO circuits to your GitHub repository.
 
 \subsubsection{\baseCPUTaskName: Base RISCV151 System}
 This checkpoint requires a fully functioning three stage RISC-V CPU as described in this specification.
