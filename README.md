@@ -21,4 +21,4 @@ Hardware for Machine Learning: https://inst.eecs.berkeley.edu//~ee290-2
 
 MIT Eyeriss Tutorial: http://eyeriss.mit.edu/tutorial.html
 
-FPGA Labs SP21: https://github.com/EECS150/fpga_labs_sp21
+FPGA Labs SP22: https://github.com/EECS150/fpga_labs_sp22
