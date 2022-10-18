@@ -82,7 +82,7 @@ Version \projectSpecVersion\\}
 
 \begin{center}
 \large{
-TA: Alisha Menon, Seah Kim, Yikuan Chen}
+TA: Yikuan Chen, Simon Guo, Jennifer Zhou, Paul Kwon, Ella Schwarz, Raghav Gupta}
 \end{center}
 
 \begin{center}
@@ -102,7 +102,7 @@ Department of Electrical Engineering and Computer Science \\
 
 \section{Introduction}
 The goal of this project is to familiarize EECS151/251A students with the methods and tools of digital design.
-Working alone or in a team of two, you will design and implement a 3-stage pipelined RISC-V CPU with a UART for tethering.
+Working alone or in a team of two, you will design and implement a 3-stage pipelined RISC-V CPU with a UART for tethering and the cache system.
 
 Finally, you will optimize your CPU for performance (maximizing the Iron Law) and cost (FPGA resource utilization).
 
@@ -129,6 +129,8 @@ The following is a brief description of each checkpoint and approximately how ma
 
   \item \textbf{\blockDiagramDueDate \space - \blockDiagramTaskName \space (\blockDiagramTimeAlloted)} - Draw a schematic of your processor's datapath and pipeline stages, and provide a brief write-up of your answers to the questions in ~\ref{sec:chkpt1_questions}. In addition, push all of your IO-circuit Verilog modules that you have implemented in the labs to your assigned GitHub repository under \verb|hardware/src/io_circuits| (see ~\ref{sec:past_designs}). Also commit your design documents (block diagram + write-up) to \verb|docs|.
   \item \textbf{\baseCPUDueDate \space - \baseCPUTaskName \space (\baseCPUTimeAlloted)} - Implement a fully functional RISC-V processor core in Verilog. Your processor core should be able to run the \textbf{mmult} demo successfully.
+
+  \item \textbf{\cacheDueDate \space - \cacheTaskName \space (\cacheTimeAlloted)} - Implement a cache in Verilog.
   
   %\item \textbf{\imageDueDate \space - \imageTaskName \space (\imageTimeAlloted)} - Implement an IO memory-mapped hardware-accelerated Convolutional Neural Network for LeNet inference.
   
@@ -169,24 +171,25 @@ The first checkpoint in this project is designed to guide the development of a t
 %Finally, the fourth checkpoint will implement the power management unit in red.
 
 \subsection{Setting up your Code Repository}
-The project skeleton files are available on GitHub. Your (private) project repo will be created by GSIs and assigned to your group. Its name will be in the format of \textbf{"sp22\_fpga\_teamXX.git"}.
+The project skeleton files are available on GitHub. Your (private) project repo will be created by GSIs and assigned to your group. Its name will be in the format of \textbf{"fa22\_fpga\_teamXX.git"}.
 The suggested way for initializing your repository with the skeleton files is as follows:
 
 \begin{minted}[tabsize=2]{bash}
-  git clone https://github.com/EECS150/project_skeleton_sp22
-  cd project_skeleton_sp22
-  git remote add my_repo_name https://github.com/EECS150/sp22_fpga_teamXX
+  git clone https://github.com/EECS150/fpga_project_skeleton_fa22
+  cd fpga_project_skeleton_fa22
+  git submodule init
+  git submodule update
+  git remote add my_repo_name https://github.com/EECS150/fa22_fpga_teamXX
   git push my_repo_name master
 \end{minted}
-
 
 Then reclone your repo and add the skeleton repo as a remote:
 \begin{minted}[tabsize=2]{bash}
   cd ..
-  rm -rf project_skeleton_sp22
-  git clone https://github.com/EECS150/sp22_fpga_teamXX
-  cd sp22_fpga_teamXX
-  git remote add staff https://github.com/EECS150/project_skeleton_sp22
+  rm -rf fpga_project_skeleton_fa22
+  git clone https://github.com/EECS150/fa22_fpga_teamXX
+  cd fa22_fpga_teamXX
+  git remote add staff https://github.com/EECS150/fpga_project_skeleton_fa22
 \end{minted}
 
 To pull project updates from the skeleton repo, run \verb|git pull staff main|.
@@ -219,7 +222,7 @@ We suggest you keep these with the provided source files in \verb|hardware/src/i
           \item \texttt{z1top.v}: Top level module. The RISC-V CPU is instantiated here.
           \item \texttt{riscv\_core/Riscv151.v}: All of your CPU datapath and control should be contained in this file.
           \item \texttt{io\_circuits}: Your IO circuits from previous lab exercises.
-          \item \texttt{EECS151.v}: Our EECS151-SP22 library file of register and memory modules. \textbf{You are expected to use these modules for your sequential logic}.
+          \item \texttt{EECS151.v}: Our EECS151-fa22 library file of register and memory modules. \textbf{You are expected to use these modules for your sequential logic}.
         \end{itemize}
       \item \texttt{sim}
         \begin{itemize}
@@ -561,13 +564,14 @@ You should add your own tests to verify that your processor can execute differen
 You will need the CSR instructions to work before you can use this test suite, and you should have confidence in your hand-written assembly tests.
 Test the CSR instructions using hand assembly tests.
 
-To run the ISA tests, first pull the latest skeleton changes:
-\begin{minted}{bash}
-git pull staff main
-git submodule update --init --recursive
-\end{minted}
+To run the ISA tests, run
+%To run the ISA tests, first pull the latest skeleton changes:
+%\begin{minted}{bash}
+%git pull staff main
+%git submodule update --init --recursive
+%\end{minted}
 
-Then run
+%Then run
 
 \begin{minted}{bash}
 cd hardware
@@ -850,7 +854,7 @@ addi x1, x2, 100
 \item When do we read from BIOS for instructions? When do we read from IMem for instructions? How do we switch from BIOS address space to IMem address space? In which case can we write to IMem, and why do we need to write to IMem? How do we know if a memory instruction is intended for DMem or any IO device?
 \end{enumerate}
 
-Commit your block diagram and your writeup to your team repository under \verb|sp22_fpga_teamXX/docs| by \blockDiagramDueDate. Please also remember to push your working IO circuits to your GitHub repository.
+Commit your block diagram and your writeup to your team repository under \verb|fa22_fpga_teamXX/docs| by \blockDiagramDueDate. Please also remember to push your working IO circuits to your GitHub repository.
 
 \subsubsection{\baseCPUTaskName: Base RISCV151 System}
 This checkpoint requires a fully functioning three stage RISC-V CPU as described in this specification.
@@ -1487,9 +1491,39 @@ Additionally, please find the maximum achievable frequency of your CPU implement
 % \end{itemize}
 
 \newpage
-\section{Checkpoint 3 - Optimization}
+\section{Checkpoint 3 - Cache}
+A processor operates on data in memory. Memory can hold billions of bits, which can either be instructions or data. In a VLSI design, it is a very bad idea to store this many bits close to the processor. The chip area required would be huge - consider how many DRAM chips your PC has, and that SRAM cells (which can actually be implemented in the same CMOS process) are much bigger than DRAM cells. Moreover, the entire processor would have to slow down to accommodate delays in the large memory array. Instead, caches are used to create the illusion of a large memory with low latency.
 
-Checkpoint 3 is an optimization checkpoint lumped with the final checkoff.
+Your task is to implement a (relatively) simple cache for your RISC-V processor, based on the interface specified below.
+
+\subsection{Cache overview}
+When you request data at a given address, the cache will see if it is stored locally. If it is (cache hit), it is returned immediately. Otherwise if it is not found (cache miss), the cache fetches the bits from the main memory. Caches store data in “ways.” A way is a logical element which contains valid bits, tag bits, and data. The simplest type of cache is direct-mapped (a 1-way cache). A cache stores data in larger units (lines) than single words. In each way, a given address may only occupy a single location, determined by the lowest bits of the cache line address. The remaining address bits are called the “tag” and are stored so that we can check if a given cache line belongs to a given address. The valid bit indicates which lines contain valid data. Multi-way caches allow more flexibility in what data is stored in the cache, since there are multiple locations for a line to occupy (the number of ways). For this reason, a ”replacement policy” is needed. This is used to decide which way’s data to evict when fetching new data. For this project you may use any policy you wish, but pseudo-random is recommended.
+
+\subsection{Guidelines and requirements}
+You have been given the interface of a cache (Cache.v) and your next task is to implement the cache. EECS151 students should build a direct-mapped cache, and EECS251 students are required to implement a cache that either:
+
+\begin{itemize}
+    \item is configurable to be either direct-mapped or at least 2-way set associative; or
+    \item is set-associative with configurable associativity.
+\end{itemize}
+
+You are welcome to implement a more performant cache if you desire. %Your cache should be at least 512 bytes; if you wish to increase the size, implement the 512 bytes cache first and upgrade later. TODO: decide cache size for FPGA%
+
+%You should use cache lines that are 512 bits (16 words) for this project. The memory interface is 128 bits, meaning that you will require multiple (4) cycles to perform memory transactions. Below find a description of each signal in Cache.v: TODO: Add cache.v parameters and decide appropriate cache parameters%
+
+You should develop a state machine that covers all the events that your cache needs to handle for both hits and misses. You can do it without an explicit state machine, but this is not recommended. Keep in mind you will need to write any valid data back to main memory before you start refilling the cache (you can use a write-back or a write-through policy). Both of these transactions will take multiple cycles.
+
+%\subsection{Testing}
+%Coming soon!%
+
+\subsection{Checkoff}
+\textbf{\cacheTaskName \space materials should be committed to your project repository by \cacheDueDate.}
+
+
+\newpage
+\section{Checkpoint 4 - Optimization}
+
+Checkpoint 4 is an optimization checkpoint lumped with the final checkoff.
 This part of the project is designed to give students freedom to implement the optimizations of their choosing to improve the performance of their processor.
 \textbf{251 students must implement branch prediction (details listed in section 4).}
 
@@ -1597,7 +1631,8 @@ If you decide to do a more advanced optimization (like a 5 stage pipeline), ask 
 Keep notes of your architecture modifications in the process of optimization.
 Consider, but don't obsess, over area usage when optimizing (keep records though).
 
-You will be graded based on the best \verb|mmult| performance you were able to achieve, but \textit{more critically} on how many design points you explored.
+\subsection{Checkoff}
+Refer to \textbf{4.1}. You will run your new implementation on the FPGA again and will be graded based on the best \verb|mmult| performance you were able to achieve, but \textit{more critically} on how many design points you explored.
 \pagebreak
 
 \section{Grading and Extra Credit}
@@ -1627,7 +1662,7 @@ Put effort into this document and be proud of the results.
 You may consider the report to be your medal for surviving EECS151/251A.
 
 \subsubsection{Report Details}
-You will turn in your project report on Gradescope by \textbf{\finalReportDueDate, 11.59PM}.
+You will turn in your project report PDF file on Gradescope by \textbf{\finalReportDueDate, 11:59PM}.
 The report should be around 8 pages total with around 5 pages of text and 3 pages of figures ($\pm$ a few pages on each), though this is not a strict limit.
 Ideally you should mix the text and figures together.
 
@@ -1645,7 +1680,7 @@ You do not need to strictly follow this outline, it is here just to give you an 
 \end{itemize}
 
 When we grade your report, we will grade for clarity, organization, and grammar.
-Both team members need to submit the Final Report assignment (same report content, but with different writeup for division of labor) to Gradescope.
+Both team members need to submit the Final Report assignment (same report content, but with different writeup for division of labor) to Gradescope. \textbf{We require your final report to be typeset using tools like \LaTeX, or Markdown, or Google Docs/MS Word/Apple Pages etc., but the file that you turn in must be a single PDF file.}
 
 \subsection{Extra Credit}
 \label{extra_credit}
