@@ -102,7 +102,7 @@ Department of Electrical Engineering and Computer Science \\
 
 \section{Introduction}
 The goal of this project is to familiarize EECS151/251A students with the methods and tools of digital design.
-Working alone or in a team of two, you will design and implement a 3-stage pipelined RISC-V CPU with a UART for tethering and the cache system.
+Working alone or in a team of two, you will design and implement a 3-stage pipelined RISC-V CPU with a UART for tethering and a data cache system.
 
 Finally, you will optimize your CPU for performance (maximizing the Iron Law) and cost (FPGA resource utilization).
 
@@ -130,7 +130,7 @@ The following is a brief description of each checkpoint and approximately how ma
   \item \textbf{\blockDiagramDueDate \space - \blockDiagramTaskName \space (\blockDiagramTimeAlloted)} - Draw a schematic of your processor's datapath and pipeline stages, and provide a brief write-up of your answers to the questions in ~\ref{sec:chkpt1_questions}. In addition, push all of your IO-circuit Verilog modules that you have implemented in the labs to your assigned GitHub repository under \verb|hardware/src/io_circuits| (see ~\ref{sec:past_designs}). Also commit your design documents (block diagram + write-up) to \verb|docs|.
   \item \textbf{\baseCPUDueDate \space - \baseCPUTaskName \space (\baseCPUTimeAlloted)} - Implement a fully functional RISC-V processor core in Verilog. Your processor core should be able to run the \textbf{mmult} demo successfully.
 
-  \item \textbf{\cacheDueDate \space - \cacheTaskName \space (\cacheTimeAlloted)} - Implement a cache in Verilog.
+  \item \textbf{\cacheDueDate \space - \cacheTaskName \space (\cacheTimeAlloted)} - Implement a data cache in Verilog.
   
   %\item \textbf{\imageDueDate \space - \imageTaskName \space (\imageTimeAlloted)} - Implement an IO memory-mapped hardware-accelerated Convolutional Neural Network for LeNet inference.
   
@@ -1494,7 +1494,7 @@ Additionally, please find the maximum achievable frequency of your CPU implement
 \section{Checkpoint 3 - Cache}
 A processor operates on data in memory. Memory can hold billions of bits, which can either be instructions or data. In a VLSI design, it is a very bad idea to store this many bits close to the processor. The chip area required would be huge - consider how many DRAM chips your PC has, and that SRAM cells (which can actually be implemented in the same CMOS process) are much bigger than DRAM cells. Moreover, the entire processor would have to slow down to accommodate delays in the large memory array. Instead, caches are used to create the illusion of a large memory with low latency.
 
-Your task is to implement a (relatively) simple cache for your RISC-V processor, based on the interface specified below.
+Your task is to implement a (relatively) simple data cache for your RISC-V processor, based on the interface specified below.
 
 \subsection{Cache overview}
 When you request data at a given address, the cache will see if it is stored locally. If it is (cache hit), it is returned immediately. Otherwise if it is not found (cache miss), the cache fetches the bits from the main memory. Caches store data in “ways.” A way is a logical element which contains valid bits, tag bits, and data. The simplest type of cache is direct-mapped (a 1-way cache). A cache stores data in larger units (lines) than single words. In each way, a given address may only occupy a single location, determined by the lowest bits of the cache line address. The remaining address bits are called the “tag” and are stored so that we can check if a given cache line belongs to a given address. The valid bit indicates which lines contain valid data. Multi-way caches allow more flexibility in what data is stored in the cache, since there are multiple locations for a line to occupy (the number of ways). For this reason, a ”replacement policy” is needed. This is used to decide which way’s data to evict when fetching new data. For this project you may use any policy you wish, but pseudo-random is recommended.
