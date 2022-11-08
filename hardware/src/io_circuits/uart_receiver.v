@@ -1,100 +1,81 @@
-
 module uart_receiver #(
-  parameter CLOCK_FREQ = 125_000_000,
-  parameter BAUD_RATE  = 115_200
-) (
-  input clk,
-  input rst,
+    parameter CLOCK_FREQ = 125_000_000,
+    parameter BAUD_RATE = 115_200)
+(
+    input clk,
+    input reset,
 
-  output [7:0] data_out,
-  output data_out_valid,
-  input data_out_ready,
+    output [7:0] data_out,
+    output data_out_valid,
+    input data_out_ready,
 
-  input serial_in
+    input serial_in
 );
+    // See diagram in the lab guide
+    localparam SYMBOL_EDGE_TIME = CLOCK_FREQ / BAUD_RATE;
+    localparam SAMPLE_TIME = SYMBOL_EDGE_TIME / 2;
+    localparam CLOCK_COUNTER_WIDTH= $clog2(SYMBOL_EDGE_TIME);
 
-  // See diagram in the lab guide
-  localparam integer SYMBOL_EDGE_TIME = CLOCK_FREQ / BAUD_RATE;
-  localparam integer SAMPLE_TIME      = SYMBOL_EDGE_TIME / 2;
-  localparam CLOCK_COUNTER_WIDTH      = $clog2(SYMBOL_EDGE_TIME);
+    wire symbol_edge;
+    wire sample;
+    wire start;
+    wire rx_running;
 
-  wire [9:0] rx_shift_value;
-  wire [9:0] rx_shift_next;
-  wire rx_shift_ce;
+    reg [9:0] rx_shift;
+    reg [3:0] bit_counter;
+    reg [CLOCK_COUNTER_WIDTH-1:0] clock_counter;
+    reg has_byte;
 
-  // MSB to LSB
-  REGISTER_CE #(.N(10)) rx_shift (
-    .q(rx_shift_value),
-    .d(rx_shift_next),
-    .ce(rx_shift_ce),
-    .clk(clk)
-  );
+    //--|Signal Assignments|------------------------------------------------------
 
-  wire [3:0] bit_counter_value;
-  wire [3:0] bit_counter_next;
-  wire bit_counter_ce, bit_counter_rst;
+    // Goes high at every symbol edge
+    /* verilator lint_off WIDTH */
+    assign symbol_edge = clock_counter == (SYMBOL_EDGE_TIME - 1);
+    /* lint_on */
 
-  REGISTER_R_CE #(.N(4), .INIT(0)) bit_counter (
-    .q(bit_counter_value),
-    .d(bit_counter_next),
-    .ce(bit_counter_ce),
-    .rst(bit_counter_rst),
-    .clk(clk)
-  );
+    // Goes high halfway through each symbol
+    /* verilator lint_off WIDTH */
+    assign sample = clock_counter == SAMPLE_TIME;
+    /* lint_on */
 
-  wire [CLOCK_COUNTER_WIDTH-1:0] clock_counter_value;
-  wire [CLOCK_COUNTER_WIDTH-1:0] clock_counter_next;
-  wire clock_counter_ce, clock_counter_rst;
+    // Goes high when it is time to start receiving a new character
+    assign start = !serial_in && !rx_running;
 
-  // Keep track of sample time and symbol edge time
-  REGISTER_R_CE #(.N(CLOCK_COUNTER_WIDTH), .INIT(0)) clock_counter (
-    .q(clock_counter_value),
-    .d(clock_counter_next),
-    .ce(clock_counter_ce),
-    .rst(clock_counter_rst),
-    .clk(clk)
-  );
+    // Goes high while we are receiving a character
+    assign rx_running = bit_counter != 4'd0;
 
-  wire data_out_fire = data_out_valid & data_out_ready;
+    // Outputs
+    assign data_out = rx_shift[8:1];
+    assign data_out_valid = has_byte && !rx_running;
 
-  wire symbol_edge = (clock_counter_value == SYMBOL_EDGE_TIME - 1);
-  wire sample_time = (clock_counter_value == SAMPLE_TIME - 1);
-  wire done        = (bit_counter_value == 10 - 1) & sample_time;
+    //--|Counters|----------------------------------------------------------------
 
-  // 'has_byte' becomes HIGH once we finish sampling all 10 bits
-  // ({stop_bit, char[7:0], start_bit}) from the serial interface
-  wire has_byte;
-  REGISTER_R_CE #(.N(1), .INIT(0)) has_byte_reg (
-    .q(has_byte),
-    .d(1'b1),
-    .ce(done),
-    .rst(data_out_fire),
-    .clk(clk)
-  );
+    // Counts cycles until a single symbol is done
+    always @ (posedge clk) begin
+        clock_counter <= (start || reset || symbol_edge) ? 0 : clock_counter + 1;
+    end
 
-  // 'start' becomes HIGH once we receive the start bit ('0') and
-  // the bit counter has not started counting
-  wire start;
-  REGISTER_R_CE #(.N(1), .INIT(0)) start_reg (
-    .q(start),
-    .d(1'b1),
-    .ce((serial_in == 0) && (bit_counter_value == 0)),
-    .rst(done),
-    .clk(clk)
-  );
+    // Counts down from 10 bits for every character
+    always @ (posedge clk) begin
+        if (reset) begin
+            bit_counter <= 0;
+        end else if (start) begin
+            bit_counter <= 10;
+        end else if (symbol_edge && rx_running) begin
+            bit_counter <= bit_counter - 1;
+        end
+    end
 
-  assign rx_shift_next = {serial_in, rx_shift_value[9:1]};
-  assign rx_shift_ce   = sample_time;
+    //--|Shift Register|----------------------------------------------------------
+    always @(posedge clk) begin
+        if (sample && rx_running) rx_shift <= {serial_in, rx_shift[9:1]};
+    end
 
-  assign bit_counter_next = bit_counter_value + 1;
-  assign bit_counter_ce   = symbol_edge;
-  assign bit_counter_rst  = done | rst;
-
-  assign clock_counter_next = clock_counter_value + 1;
-  assign clock_counter_ce   = start;
-  assign clock_counter_rst  = symbol_edge | done | rst;
-
-  assign data_out       = rx_shift_value[8:1];
-  assign data_out_valid = has_byte;
-
+    //--|Extra State For Ready/Valid|---------------------------------------------
+    // This block and the has_byte signal aren't needed in the uart_transmitter
+    always @ (posedge clk) begin
+        if (reset) has_byte <= 1'b0;
+        else if (bit_counter == 1 && symbol_edge) has_byte <= 1'b1;
+        else if (data_out_ready) has_byte <= 1'b0;
+    end
 endmodule

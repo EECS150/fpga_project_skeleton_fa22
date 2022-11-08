@@ -1,145 +1,122 @@
+SHELL                   := $(shell which bash) -o pipefail
+ABS_TOP                 := $(subst /cygdrive/c/,C:/,$(shell pwd))
+SCRIPTS                 := $(ABS_TOP)/scripts
+VIVADO                  ?= vivado
+VIVADO_OPTS             ?= -nolog -nojournal -mode batch
+FPGA_PART               ?= xc7z020clg400-1
+RTL                     += $(subst /cygdrive/c/,C:/,$(shell find $(ABS_TOP)/src -type f -name "*.v"))
+CONSTRAINTS             += $(subst /cygdrive/c/,C:/,$(shell find $(ABS_TOP)/src -type f -name "*.xdc"))
+TOP                     ?= z1top
+VCS                     := vcs -full64
+VCS_OPTS                := -notice -line +lint=all,noVCDE,noNS,noSVA-UA -sverilog -timescale=1ns/10ps -debug +define+ABS_TOP=$(ABS_TOP) +incdir+$(ABS_TOP)/src/riscv_core
+SIM_RTL                 := $(subst /cygdrive/c/,C:/,$(shell find $(ABS_TOP)/sim -type f -name "*.v"))
+SIM_MODELS              := $(subst /cygdrive/c/,C:/,$(shell find $(ABS_TOP)/sim_models -type f -name "*.v"))
+IVERILOG                := iverilog
+IVERILOG_OPTS           := -Ttyp -D IVERILOG=1 -g2012 -gassertions -Wall -Wno-timescale -D ABS_TOP=$(ABS_TOP) -I $(ABS_TOP)/src/riscv_core -I $(ABS_TOP)/sim
+VVP                     := vvp
+ISA_TESTS               := $(subst /cygdrive/c/,C:/,$(shell find $(ABS_TOP)/../software/riscv-isa-tests -type f -name "*.hex"))
+ISA_TESTS_FILES         := $(notdir $(ISA_TESTS))
+ISA_TESTS_FST           := $(addprefix sim/isa/,$(subst .hex,.fst,$(ISA_TESTS_FILES)))
+C_TESTS                 := $(subst /cygdrive/c/,C:/,$(shell find $(ABS_TOP)/../software/c_tests -type f -name "*.c"))
+C_TESTS_FILES           := $(notdir $(C_TESTS))
+C_TESTS_FST             := $(addprefix sim/c_tests/,$(subst .c,.fst,$(C_TESTS_FILES)))
 
-VERILOG_SRCS := $(wildcard src/*.v)
-VERILOG_SRCS += $(wildcard src/io_circuits/*.v)
-VERILOG_SRCS += $(wildcard src/riscv_core/*.v)
-VERILOG_SRCS += $(wildcard src/accelerator/*.v)
-VERILOG_SIMS := $(wildcard sim/*.v)
+sim/%.tb: sim/%.v $(RTL) $(SIM_MODELS)
+	cd sim && $(VCS) $(VCS_OPTS) -o $*.tb $(RTL) $(SIM_MODELS) $*.v -top $* -top glbl
 
-tb := assembly_testbench
+sim/%.vpd: sim/%.tb
+	cd sim && ./$*.tb +verbose=1 +vpdfile+$*.vpd |& tee $*.log
 
-ifeq ($(tb), assembly_testbench)
-sw   = assembly_tests
-else ifeq ($(tb), echo_testbench)
-sw   = echo
-else ifeq ($(tb), c_testbench)
-sw = c_test
-else ifeq ($(tb), isa_testbench)
-sw = riscv-isa-tests
-test = all
-else
-test = $(sw)
-endif
+sim/%.tbi: sim/%.v $(RTL)
+	cd sim && $(IVERILOG) $(IVERILOG_OPTS) -o $*.tbi $*.v $(RTL) $(SIM_MODELS)
 
-BIOS_MIF := ../software/bios151v3/bios151v3.mif
-SW_MIF   := ../software/$(sw)/*.mif
-SW_SRCS  := $(wildcard ../software/$(sw)/*.h)
-SW_SRCS  += $(wildcard ../software/$(sw)/*.c)
-SW_SRCS  += $(wildcard ../software/$(sw)/*.s)
-SW_SRCS  += $(wildcard ../software/$(sw)/*.ld)
+sim/%.fst: sim/%.tbi
+	cd sim && $(VVP) $*.tbi -fst |& tee $*.log
 
-$(BIOS_MIF):
-		cd ../software/bios151v3 && make > /dev/null
+# ISA Tests
+sim/isa/isa_tb.tbi: sim/isa_tb.v $(RTL) $(SIM_MODELS)
+	mkdir -p sim/isa
+	cd sim/isa && $(IVERILOG) $(IVERILOG_OPTS) -o isa_tb.tbi ../isa_tb.v $(RTL) $(SIM_MODELS)
 
-$(SW_MIF): $(SW_SRCS)
-		cd ../software/$(sw) && make > /dev/null
+sim/isa/%.fst: sim/isa/isa_tb.tbi $(ABS_TOP)/../software/riscv-isa-tests/%.hex
+	cd sim/isa && $(VVP) isa_tb.tbi -fst +hex_file=$(word 2,$^) +test_name=$(basename $(notdir $(word 2,$^))) |& tee $(basename $(notdir $(word 2,$^))).log
 
-$(sw): $(SW_MIF)
+isa-tests: $(ISA_TESTS_FST)
 
-# iverilog simulation
-sim_exec = $(tb).out
-sim_vcd  = $(tb).vcd
+# C Tests
+sim/c_tests/c_tests_tb.tbi: sim/c_tests_tb.v $(RTL) $(SIM_MODELS)
+	mkdir -p sim/c_tests
+	cd sim/c_tests && $(IVERILOG) $(IVERILOG_OPTS) -o c_tests_tb.tbi ../c_tests_tb.v $(RTL) $(SIM_MODELS)
 
-IV_FLAGS := -Wimplicit -Winfloop -Wfloating-nets
+sim/c_tests/%.fst: sim/c_tests/c_tests_tb.tbi $(ABS_TOP)/../software/c_tests/%
+	cd sim/c_tests && $(VVP) c_tests_tb.tbi -fst +hex_file=$(word 2,$^)/$*.hex +test_name=$(basename $(notdir $(word 2,$^))) |& tee $(basename $(notdir $(word 2,$^))).log
 
-iverilog-compile $(sim_exec): $(VERILOG_SRCS) $(VERILOG_SIMS)
-	iverilog $(IV_FLAGS) $(VERILOG_SRCS) $(VERILOG_SIMS) -I src/ -I src/riscv_core -I src/accelerator -I sim/ -s $(tb) -o $(sim_exec)
+c-tests: $(C_TESTS_FST)
 
-# Full ISA test suit (exclude fence_i)
-isa_tests = \
-	addi \
-	add \
-	andi \
-	and \
-	auipc \
-	beq \
-	bge \
-	bgeu \
-	blt \
-	bltu \
-	bne \
-	jal \
-	jalr \
-	lb \
-	lbu \
-	lh \
-	lhu \
-	lui \
-	lw \
-	ori \
-	or \
-	sb \
-	sh \
-	simple \
-	slli \
-	sll \
-	slti \
-	sltiu \
-	slt \
-	sltu \
-	srai \
-	sra \
-	srli \
-	srl \
-	sub \
-	sw \
-	xori \
-	xor \
+build/target.tcl: $(RTL) $(CONSTRAINTS)
+	mkdir -p build
+	truncate -s 0 $@
+	echo "set ABS_TOP                        $(ABS_TOP)"    >> $@
+	echo "set TOP                            $(TOP)"    >> $@
+	echo "set FPGA_PART                      $(FPGA_PART)"  >> $@
+	echo "set_param general.maxThreads       4"    >> $@
+	echo "set_param general.maxBackupLogs    0"    >> $@
+	echo -n "set RTL { " >> $@
+	FLIST="$(RTL)"; for f in $$FLIST; do echo -n "$$f " ; done >> $@
+	echo "}" >> $@
+	echo -n "set CONSTRAINTS { " >> $@
+	FLIST="$(CONSTRAINTS)"; for f in $$FLIST; do echo -n "$$f " ; done >> $@
+	echo "}" >> $@
 
-iverilog-sim $(sim_vcd): $(sim_exec) $(BIOS_MIF) $(sw)
-	cp $(BIOS_MIF) ./
-	if [ "$(sw)" != "" ] ; then \
-		cp $(SW_MIF) ./ ; \
-	fi
-	if [ "$(tb)" = "isa_testbench" -a "$(test)" = "all" ] ; then \
-		for inst in $(isa_tests) ; do \
-			./$(sim_exec) +MIF_FILE=$$inst.mif | tee -a output.log ; \
-		done ; \
-		sed -n '/\[[a-zA-Z]*\]/p' output.log ; \
-	else \
-		./$(sim_exec) +MIF_FILE=$(test).mif ; \
-	fi
-	rm -f *.mif
+setup: build/target.tcl
 
-wave: $(sim_vcd)
-	gtkwave $(sim_vcd)
+elaborate: build/target.tcl $(SCRIPTS)/elaborate.tcl
+	mkdir -p ./build
+	cd ./build && $(VIVADO) $(VIVADO_OPTS) -source $(SCRIPTS)/elaborate.tcl |& tee elaborate.log
 
-# Vivado
-proj := z1top
-Z1TOP_XPR = $(proj)_proj/$(proj)_proj.xpr
+build/synth/$(TOP).dcp: build/target.tcl $(SCRIPTS)/synth.tcl
+	mkdir -p ./build/synth/
+	cd ./build/synth/ && $(VIVADO) $(VIVADO_OPTS) -source $(SCRIPTS)/synth.tcl |& tee synth.log
 
-clk := 20
-port_number := 3121
+synth: build/synth/$(TOP).dcp
 
-$(Z1TOP_XPR): $(VERILOG_SRCS) $(BIOS_MIF)
-		vivado -mode batch -source scripts/build_project.tcl -tclargs $(proj) $(clk)
+build/impl/$(TOP).bit: build/synth/$(TOP).dcp $(SCRIPTS)/impl.tcl
+	mkdir -p ./build/impl/
+	cd ./build/impl && $(VIVADO) $(VIVADO_OPTS) -source $(SCRIPTS)/impl.tcl |& tee impl.log
 
-.PHONY: build-project
-build-project: $(Z1TOP_XPR)
+impl: build/impl/$(TOP).bit
+all: build/impl/$(TOP).bit
 
-.PHONY: sim
-sim: $(sw) $(BIOS_MIF)
-		vivado -mode batch -source scripts/sim.tcl -tclargs $(proj) $(tb) $(sw) $(test) | tee output.log
-		sed -n '/\[[a-zA-Z]*\]/p' output.log ; \
+program: build/impl/$(TOP).bit $(SCRIPTS)/program.tcl
+	cd build/impl && $(VIVADO) $(VIVADO_OPTS) -source $(SCRIPTS)/program.tcl
 
-.PHONY: write-bitstream
-write-bitstream: $(Z1TOP_XPR)
-		vivado -mode batch -source scripts/write_bitstream.tcl -tclargs $(proj) $(clk)
+program-force:
+	cd build/impl && $(VIVADO) $(VIVADO_OPTS) -source $(SCRIPTS)/program.tcl
 
-.PHONY: program-fpga
-program-fpga:
-		vivado -mode batch -source scripts/program_fpga.tcl -tclargs $(bs)
+vivado: build
+	cd build && nohup $(VIVADO) </dev/null >/dev/null 2>&1 &
 
-.PHONY: init-arm
-init-arm:
-		xsdb scripts/init_arm.tcl $(port_number)
+lint:
+	verilator -DABS_TOP=$(ABS_TOP) --lint-only --top-module $(TOP) $(RTL) -I$(ABS_TOP)/src/riscv_core $(ABS_TOP)/stubs/PLLE2_ADV.v $(ABS_TOP)/sim_models/BUFG.v
 
-.PHONY: clean
-# "make clean" won't remove your project folders
-clean:
-		rm -rf *.log *.jou *.str *.vcd *.out *.mif NA
+sim_build/compile_simlib/synopsys_sim.setup:
+	mkdir -p sim_build/compile_simlib
+	cd build/sim_build/compile_simlib && $(VIVADO) $(VIVADO_OPTS) -source $(SCRIPTS)/compile_simlib.tcl
 
-.PHONY: veryclean
-# "make veryclean" removes the project folders and bitstream files
-veryclean:
-		rm -rf *.log *.jou *.str *.vcd *.out *.mif NA z1top* bitstream_files
+compile_simlib: sim_build/compile_simlib/synopsys_sim.setup
 
+screen:
+	screen /dev/ttyUSB0 115200
+
+clean-sim:
+	rm -rf *.daidir sim/output.txt \
+	sim/*.tb sim/*.daidir sim/csrc \
+	sim/ucli.key sim/*.vpd sim/*.vcd \
+	sim/*.tbi sim/*.fst sim/*.jou sim/*.log sim/*.out \
+	sim/isa sim/c_tests
+
+clean-build:
+	rm -rf ./build
+
+.PHONY: setup synth impl program program-force vivado all clean-build clean-sim %.tb
+.PRECIOUS: sim/%.tb sim/%.tbi sim/%.fst sim/%.vpd
