@@ -192,7 +192,14 @@ Then reclone your repo and add the skeleton repo as a remote:
   git remote add staff https://github.com/EECS150/fpga_project_skeleton_fa22
 \end{minted}
 
-To pull project updates from the skeleton repo, run \verb|git pull staff main|.
+\textbf{Note:} The above instructions are for HTTPS authentication. If you are running into HTTPS authentication errors, you can use SSH authentication by replacing the above Git repo URLs with the following:
+
+\begin{minted}[tabsize=2]{bash}
+  git@github.com:EECS150/fpga_project_skeleton_fa22.git
+  git@github.com:EECS150/fa22_fpga_teamXX.git
+\end{minted}
+
+To pull project updates from the skeleton repo, run \verb|git pull staff master|.
 
 To get a team repo, fill the \href{https://forms.gle/7s9dDKWdLRchwKKd9}{Google form} with your team information (names, GitHub logins). Only one person in a team is required to fill the form.
 
@@ -220,32 +227,29 @@ We suggest you keep these with the provided source files in \verb|hardware/src/i
       \item \texttt{src}
         \begin{itemize}
           \item \texttt{z1top.v}: Top level module. The RISC-V CPU is instantiated here.
-          \item \texttt{riscv\_core/Riscv151.v}: All of your CPU datapath and control should be contained in this file.
+          \item \texttt{riscv\_core/cpu.v}: All of your CPU datapath and control should be contained in this file.
           \item \texttt{io\_circuits}: Your IO circuits from previous lab exercises.
-          \item \texttt{EECS151.v}: Our EECS151-fa22 library file of register and memory modules. \textbf{You are expected to use these modules for your sequential logic}.
+          \item \texttt{riscv\_core/opcode.vh}: Constant definitions for various RISC-V opcodes and funct codes.
         \end{itemize}
       \item \texttt{sim}
         \begin{itemize}
-          \item \verb|Riscv151_testbench.v|: Starting point for testing your CPU. The testbench checks if your CPU can execute all the RV32I instructions (including CSR ones) correctly, and can handle some simple hazards. You should make sure that your CPU implementation passes this testbench before moving on.
-          \item \verb|assembly_testbench.v|: The testbench works with the software in \texttt{software/assembly\_tests}.
-          \item \verb|isa_testbench.v|: The testbench works with the RISC-V ISA test suite in
+          \item \verb|cpu_tb.v|: Starting point for testing your CPU. The testbench checks if your CPU can execute all the RV32I instructions (including CSR ones) correctly, and can handle some simple hazards. You should make sure that your CPU implementation passes this testbench before moving on.
+          \item \verb|asm_tb.v|: The testbench works with the software in \texttt{software/assembly\_tests}.
+          \item \verb|isa_tb.v|: The testbench works with the RISC-V ISA test suite in \texttt{software/riscv-isa-tests}. The testbench only runs one test at a time. To run multiple tests, use the script we provide. There is a total of 38 ISA tests in the test suite.
 
-\texttt{software/riscv-isa-tests}.
-
-The testbench only runs one test at a time. To run multiple tests, use the script we provide (see \ref{riscv-isa-tests}). There is a total of 38 ISA tests in the test suite.
-        \end{itemize}
-          \item \verb|echo_testbench.v|: The testbench works with the software in \texttt{software/echo}. The CPU reads a character sent from the serial rx line and echoes it back to the serial tx line.
-          \item \verb|bios_testbench.v|: The testbench works with the BIOS program. The testbench checks if your CPU can execute the instructions stored in the BIOS memory. The testbench also emulates user input sent over the serial rx line, and checks the BIOS message output obtained from the serial tx line.
-          \item \verb|software_testbench.v|: The testbench works with some software programs in \texttt{software/}. This is an extra test for debugging.
-          \item \verb|c_testbench.v|: The testbench works with the software in \texttt{software/c\_test}. This is an extra test for debugging.
+          \item \verb|c_tests_tb.v|: This testbench verifies the correct execution of the software in \texttt{software/c\_tests}. There are 6 C tests provided.
+          \item \verb|echo_tb.v|: The testbench works with the software in \texttt{software/echo}. The CPU reads a character sent from the serial rx line and echoes it back to the serial tx line.
+          \item \verb|uart_parse_tb.v|: This testbench verifies a few tricky functions from the BIOS in isolation using the software in \texttt{software/uart\_parse}.
+          \item \verb|bios_testbench.v|: This testbench simulates the execution of the BIOS program. It checks if your CPU can execute the instructions stored in the BIOS memory. The testbench also emulates user input sent over the serial rx line, and checks the BIOS message output obtained from the serial tx line.
+          \end{itemize}
 
     \end{itemize}
   \item \texttt{software}
     \begin{itemize}
-      \item \verb|bios151v3|: The BIOS program, which allows us to interact with our CPU via the UART. You need to compile it before creating a bitstream or running a simulation.
+      \item \verb|bios|: The BIOS program, which allows us to interact with our CPU via the UART. You need to compile it before creating a bitstream or running a simulation.
       \item \verb|echo|: The echo program, which emulates the echo test of Lab 5 in software.
-      \item \verb|assembly_tests|: Use this as a template to write assembly tests for your processor designed to run in simulation.
-      \item \verb|c_example|: Use this as an example to write C programs.
+      \item \verb|asm|: Use this as a template to write assembly tests for your processor designed to run in simulation.
+      \item \verb|c_tests|: Use these as examples to write C programs for testing.
       \item \verb|riscv-isa-tests|: A comprehensive test suite for your CPU. Available after doing \verb|git submodule| (see \ref{riscv-isa-tests}).
       \item \verb|mmult|: This is a program to be run on the FPGA for Checkpoint 2. It generates 2 matrices and multiplies them. Then it returns a checksum to verify the correct result.
     \end{itemize}
@@ -375,7 +379,7 @@ To facilitate this, we will adopt a modified memory architecture shown in Figure
 The memory architecture will consist of three RAMs (instruction, data, and BIOS).
 The RAMs are memory resources (block RAMs) contained within the FPGA chip, and no external (off-chip, DRAM) memory will be used for this project.
 
-The processor will begin execution from the BIOS memory, which will be initialized with the BIOS program (in \verb|software/bios151v3|).
+The processor will begin execution from the BIOS memory, which will be initialized with the BIOS program (in \verb|software/bios|).
 The BIOS program should be able to read from the BIOS memory (to fetch static data and instructions), and read and write the instruction and data memories.
 This allows the BIOS program to receive user programs over the UART from the host PC and load them into instruction memory.
 
@@ -476,95 +480,97 @@ In assigning partial credit at the end for incomplete projects, we will look at 
 A reasonable order in which to complete your testing is as follows:
 
 \begin{enumerate}
-  \item Test that your modules work in isolation via Verilog testbenches
-  \item Test that your Riscv151 work with the \verb|Riscv151_testbench.v|
-  \item Test the entire CPU one instruction at a time with hand-written assembly --- see \verb|assembly_testbench.v|
-  \item Run the \verb|riscv-tests| ISA test suite
-  \item Some extra tests with other software C program, such as \verb|c_test| and \verb|strcmp|. They could help reveal more bugs -- see \verb|c_testbench.v| and \verb|software_testbench.v|
-  \item Test the CPU's memory mapped I/O --- see \verb|echo_testbench.v|
-  \item Test the CPU's memory mapped I/O with BIOS software program --- see \verb|bios_testbench.v|
+  \item Test that your modules work in isolation via Verilog testbenches that you write yourself
+  \item Test that your CPU pipeline works with the \verb|sim/cpu_tb.v|
+  \item Test the entire CPU one instruction at a time with hand-written assembly --- see \verb|sim/asm_tb.v|
+  \item Run the \verb|riscv-tests| ISA test suite (\verb|make isa-tests|)
+  \item Some extra tests with other software C program, such as \verb|c_tests| and \verb|uart_parse|. They could help reveal more bugs -- see \verb|c_tests_tb.v| and \verb|uart_parse_tb.v|
+  \item Test the CPU's memory mapped I/O --- see \verb|echo_tb.v|
+  \item Test the CPU's memory mapped I/O with BIOS software program --- see \verb|bios_tb.v|
 \end{enumerate}
 
-\subsection{Riscv151 Tests}
+For more information on testing, please see the README at \verb|hardware/README.md|.
 
-Once you are confident that the individual components of your processor are working in isolation, you will want to test the entire processor as a whole. One way to do this is to pass the \verb|Riscv151_testbench|. To run the test, use either one of the following commands (iverilog is highly recommended since it is faster):\\
-\begin{minted}{bash}
+%\subsection{Riscv151 Tests}
 
-# Simulate with sim/Riscv151_testbench.v
+%Once you are confident that the individual components of your processor are working in isolation, you will want to test the entire processor as a whole. One way to do this is to pass the \verb|Riscv151_testbench|. To run the test, use either one of the following commands (iverilog is highly recommended since it is faster):\\
+%\begin{minted}{bash}
 
-# with iverilog
-make iverilog-sim tb=Riscv151_testbench
+%# Simulate with sim/Riscv151_testbench.v
 
-# open waveform
-make wave tb=Riscv151_testbench
+%# with iverilog
+%make iverilog-sim tb=Riscv151_testbench
 
-# with Vivado
-make sim tb=Riscv151_testbench
+%# open waveform
+%make wave tb=Riscv151_testbench
 
-\end{minted}
+%# with Vivado
+%make sim tb=Riscv151_testbench
 
-The testbench covers all RV32I instructions. To pass this testbench, you should have a working Riscv151 implementation that can decode and execute all the instructions in the spec, including the CSR instructions. Several basic hazard cases are also tested. The testbench does not work with any software code as in the following sections, but rather it manually initializes the instructions and data in the memory blocks as well as the register file content for each test. The testbench does not cover reading from BIOS memory nor memory mapped IO. You will need to complete these components before moving on with other testbenches.
+%\end{minted}
 
-\subsection{Software Toolchain}
-\label{toolchain}
-A GCC RISC-V toolchain has been built and installed in the eecs151 home directory; these binaries will run on any of the c125m machines in the 125 Cory lab. The \href{https://berkeley.box.com/s/s4z0ykpf0tudrm9hce8fsmitpgb2khhe}{VM Image} also has the toolchain installed along with Vivado 2019.1.
+%The testbench covers all RV32I instructions. To pass this testbench, you should have a working Riscv151 implementation that can decode and execute all the instructions in the spec, including the CSR instructions. Several basic hazard cases are also tested. The testbench does not work with any software code as in the following sections, but rather it manually initializes the instructions and data in the memory blocks as well as the register file content for each test. The testbench does not cover reading from BIOS memory nor memory mapped IO. You will need to complete these components before moving on with other testbenches.
 
-The most relevant programs in the toolchain are:
-\begin{itemize}
-    \item \verb|riscv64-unknown-elf-gcc|: GCC for RISC-V, compiles C code to RISC-V binaries.
-    \item \verb|riscv64-unknown-elf-as|: RISC-V assembler, compiles assembly code to RISC-V binaries.
-    \item \verb|riscv64-unknown-elf-objdump|: Dumps RISC-V binaries as readable assembly code.
-\end{itemize}
+%\subsection{Software Toolchain}
+%\label{toolchain}
+%A GCC RISC-V toolchain has been built and installed in the eecs151 home directory; these binaries will run on any of the c125m machines in the 125 Cory lab. The \href{https://berkeley.box.com/s/s4z0ykpf0tudrm9hce8fsmitpgb2khhe}{VM Image} also has the toolchain installed along with Vivado 2019.1.
 
-Look at the \verb|software/c_example| folder for an example of a C program.
+%The most relevant programs in the toolchain are:
+%\begin{itemize}
+%    \item \verb|riscv64-unknown-elf-gcc|: GCC for RISC-V, compiles C code to RISC-V binaries.
+%    \item \verb|riscv64-unknown-elf-as|: RISC-V assembler, compiles assembly code to RISC-V binaries.
+%    \item \verb|riscv64-unknown-elf-objdump|: Dumps RISC-V binaries as readable assembly code.
+%\end{itemize}
 
-There are several files:
-\begin{itemize}
-    \item \verb|start.s|: This is an assembly file that contains the start of the program.
-      It initialises the stack pointer then jumps to the \verb|main| label.
-      Edit this file to move the top of the stack.
-      Typically your stack pointer is set to the top of the data memory address space, so that the stack has enough room to grow downwards.
+%Look at the \verb|software/c_example| folder for an example of a C program.
 
-    \item \verb|c_example.ld|: This linker script sets the base address of the program.
-      For Checkpoint 2, this address should be in the format \verb|0x1000xxxx|
-      The .text segment offset is typically set to the base of the instruction memory address space.
+%There are several files:
+%\begin{itemize}
+%    \item \verb|start.s|: This is an assembly file that contains the start of the program.
+%      It initialises the stack pointer then jumps to the \verb|main| label.
+%      Edit this file to move the top of the stack.
+%      Typically your stack pointer is set to the top of the data memory address space, so that the stack has enough room to grow downwards.
 
-    \item \verb|c_example.elf|: Binary produced after running \verb|make|.\\Use \verb|riscv64-unknown-elf-objdump -Mnumeric -D c_example.elf| to view the assembly code.
-    \item \verb|c_example.dump|: Assembly dump of the binary.
-\end{itemize}
+%    \item \verb|c_example.ld|: This linker script sets the base address of the program.
+%      For Checkpoint 2, this address should be in the format \verb|0x1000xxxx|
+%      The .text segment offset is typically set to the base of the instruction memory address space.
 
-\subsection{Assembly Tests}
-\label{assembly_tests}
-Hand written assembly tests are in \verb|software/assembly_tests/start.s| and the corresponding testbench is in \verb|hardware/sim/assembly_testbench.v|.
-To run the test, run:\\
-\verb|make sim tb=assembly_testbench|
+%    \item \verb|c_example.elf|: Binary produced after running \verb|make|.\\Use \verb|riscv64-unknown-elf-objdump -Mnumeric -D c_example.elf| to view the assembly code.
+%    \item \verb|c_example.dump|: Assembly dump of the binary.
+%\end{itemize}
 
-\verb|start.s| contains assembly that's compiled and loaded into the BIOS RAM by the testbench.
-\begin{minted}[breaklines]{asm}
-_start:
+%\subsection{Assembly Tests}
+%\label{assembly_tests}
+%Hand written assembly tests are in \verb|software/assembly_tests/start.s| and the corresponding testbench is in \verb|hardware/sim/assembly_testbench.v|.
+%To run the test, run:\\
+%\verb|make sim tb=assembly_testbench|
 
-# Test ADD
-li x10, 100         # Load argument 1 (rs1)
-li x11, 200         # Load argument 2 (rs2)
-add x1, x10, x11    # Execute the instruction being tested
-li x20, 1           # Set the flag register to stop execution and inspect the result register
-                    # Now we check that x1 contains 300 in the testbench
+%\verb|start.s| contains assembly that's compiled and loaded into the BIOS RAM by the testbench.
+%\begin{minted}[breaklines]{asm}
+%_start:
 
-Done: j Done
-\end{minted}
+%# Test ADD
+%li x10, 100         # Load argument 1 (rs1)
+%li x11, 200         # Load argument 2 (rs2)
+%add x1, x10, x11    # Execute the instruction being tested
+%li x20, 1           # Set the flag register to stop execution and inspect the result register
+%                    # Now we check that x1 contains 300 in the testbench
 
-The \verb|assembly_testbench| toggles the clock one cycle at time and waits for register \verb|x20| to be written with a particular value (in the above example: 1).
-Once \verb|x20| contains 1, the testbench inspects the value in \verb|x1| and checks it is 300, which indicates your processor correctly executed the add instruction.
+%Done: j Done
+%\end{minted}
 
-If the testbench times out it means \verb|x20| never became 1, so the processor got stuck somewhere or \verb|x20| was written with another value.
+%The \verb|assembly_testbench| toggles the clock one cycle at time and waits for register \verb|x20| to be written with a particular value (in the above example: 1).
+%Once \verb|x20| contains 1, the testbench inspects the value in \verb|x1| and checks it is 300, which indicates your processor correctly executed the add instruction.
 
-You should add your own tests to verify that your processor can execute different instructions correctly. Modify the file \verb|start.s| to add your assembly code, then rerun the RTL simulation.
+%If the testbench times out it means \verb|x20| never became 1, so the processor got stuck somewhere or \verb|x20| was written with another value.
 
-\subsection{RISC-V ISA Tests}\label{riscv-isa-tests}
-You will need the CSR instructions to work before you can use this test suite, and you should have confidence in your hand-written assembly tests.
-Test the CSR instructions using hand assembly tests.
+%You should add your own tests to verify that your processor can execute different instructions correctly. Modify the file \verb|start.s| to add your assembly code, then rerun the RTL simulation.
 
-To run the ISA tests, run
+%\subsection{RISC-V ISA Tests}\label{riscv-isa-tests}
+%You will need the CSR instructions to work before you can use this test suite, and you should have confidence in your hand-written assembly tests.
+%Test the CSR instructions using hand assembly tests.
+
+%To run the ISA tests, run
 %To run the ISA tests, first pull the latest skeleton changes:
 %\begin{minted}{bash}
 %git pull staff main
@@ -573,183 +579,183 @@ To run the ISA tests, run
 
 %Then run
 
-\begin{minted}{bash}
-cd hardware
+%\begin{minted}{bash}
+%cd hardware
 
-# with iverilog
-make iverilog-sim tb=isa_testbench test=all
+%# with iverilog
+%make iverilog-sim tb=isa_testbench test=all
 
-# with Vivado
-make sim tb=isa_testbench test=all
-\end{minted}
+% # with Vivado
+% make sim tb=isa_testbench test=all
+% \end{minted}
 
-To run a particular ISA test (e.g. \verb|add|), replace "all" with "add". The simulation should print out which tests passed or failed and their simulation cycles.
+% To run a particular ISA test (e.g. \verb|add|), replace "all" with "add". The simulation should print out which tests passed or failed and their simulation cycles.
 
-If you're failing a test, debug using the test assembly file in\\\verb|software/riscv-isa-tests/riscv-tests/isa/rv32ui| or the generated assembly dump.
-The assembly dump files are extremely helpful in debugging at this stage. If you look into a particular dump file of a test (e.g., \verb|add.dump|), it contains several subtests in series. The CSR output from the simulation indicates which subtest is failing to help you narrow down where the problem is, and you can start debugging from there.
+% If you're failing a test, debug using the test assembly file in\\\verb|software/riscv-isa-tests/riscv-tests/isa/rv32ui| or the generated assembly dump.
+% The assembly dump files are extremely helpful in debugging at this stage. If you look into a particular dump file of a test (e.g., \verb|add.dump|), it contains several subtests in series. The CSR output from the simulation indicates which subtest is failing to help you narrow down where the problem is, and you can start debugging from there.
 
-The \verb|RESET_PC| parameter is used in \verb|isa_testbench| to start the test in the IMEM instead of the BIOS.
-Make sure you have used it in \verb|Riscv151.v|.
+% The \verb|RESET_PC| parameter is used in \verb|isa_testbench| to start the test in the IMEM instead of the BIOS.
+% Make sure you have used it in \verb|Riscv151.v|.
 
-\subsection{Software Tests}
+% \subsection{Software Tests}
 
-\subsubsection{RISC-V Programs}
+% \subsubsection{RISC-V Programs}
 
-Next, you will test your processor with some small RISC-V C programs in \verb|software|.
-We use the RISC-V software toolchain to compile a program to a memory initialization file
-(MIF). The MIF file stores the assembly instructions (encoded in binary format)
-of the program and initializes \texttt{IMem} and \texttt{DMem} in
-\verb|hardware/sim/software_testbench.v| for testing.
-Some available C programs are:
+% Next, you will test your processor with some small RISC-V C programs in \verb|software|.
+% We use the RISC-V software toolchain to compile a program to a memory initialization file
+% (MIF). The MIF file stores the assembly instructions (encoded in binary format)
+% of the program and initializes \texttt{IMem} and \texttt{DMem} in
+% \verb|hardware/sim/software_testbench.v| for testing.
+% Some available C programs are:
 
-\verb|software/strcmp/strcmp.c|, \verb|software/vecadd/vecadd.c|,
+% \verb|software/strcmp/strcmp.c|, \verb|software/vecadd/vecadd.c|,
 
-\verb|software/fib/fib.c|, \verb|software/sum/sum.c|, \verb|software/replace/replace.c|,
+% \verb|software/fib/fib.c|, \verb|software/sum/sum.c|, \verb|software/replace/replace.c|,
 
-\verb|software/cachetest/cachetest.c|
+% \verb|software/cachetest/cachetest.c|
 
-which you can test with the following commands
+% which you can test with the following commands
 
-\begin{minted}{bash}
+% \begin{minted}{bash}
 
-# with iverilog
-make iverilog-sim tb=software_testbench sw=strcmp
-make iverilog-sim tb=software_testbench sw=vecadd
-...
+% # with iverilog
+% make iverilog-sim tb=software_testbench sw=strcmp
+% make iverilog-sim tb=software_testbench sw=vecadd
+% ...
 
-# with Vivado
-make sim tb=software_testbench sw=strcmp
-make sim tb=software_testbench sw=vecadd
-...
+% # with Vivado
+% make sim tb=software_testbench sw=strcmp
+% make sim tb=software_testbench sw=vecadd
+% ...
 
-\end{minted}
+% \end{minted}
 
-These tests could help reveal more hazard bugs in your implementation. \texttt{strcmp} is particular important since it is frequently used in the BIOS program. The tests use CSR instruction to indicate if they are passed (e.g., write '1' to the CSR register if passed). Take a look at the C files for further details. Following that practice, you can also write your custom C program to further test your CPU.
+% These tests could help reveal more hazard bugs in your implementation. \texttt{strcmp} is particular important since it is frequently used in the BIOS program. The tests use CSR instruction to indicate if they are passed (e.g., write '1' to the CSR register if passed). Take a look at the C files for further details. Following that practice, you can also write your custom C program to further test your CPU.
 
-As an additional tip for debugging, try changing the compiler optimization flag in the \verb|Makefile| of each software test (e.g., \texttt{-O2} to \texttt{-O1} or \texttt{-O0}), or using a newer GCC compiler and see if your processor still passes the test. Different compiler settings generate different sequences of assembly instructions, and some might expose subtle hazard bugs yet to be covered by your implementation.
+% As an additional tip for debugging, try changing the compiler optimization flag in the \verb|Makefile| of each software test (e.g., \texttt{-O2} to \texttt{-O1} or \texttt{-O0}), or using a newer GCC compiler and see if your processor still passes the test. Different compiler settings generate different sequences of assembly instructions, and some might expose subtle hazard bugs yet to be covered by your implementation.
 
-\subsubsection{Echo}
-You should have your UART modules integrated with the CPU before running this test. The test verifies if your CPU is able to: check the UART status, read a character from UART Receiver, and write a character to UART Transmitter. Take a look at the software code \verb|software/echo/echo.c| to see what it does. The testbench loads the MIF file compiled from the software code, and load it to the BIOS memory in a similar manner to the assembly test and riscv-isa tests.
+% \subsubsection{Echo}
+% You should have your UART modules integrated with the CPU before running this test. The test verifies if your CPU is able to: check the UART status, read a character from UART Receiver, and write a character to UART Transmitter. Take a look at the software code \verb|software/echo/echo.c| to see what it does. The testbench loads the MIF file compiled from the software code, and load it to the BIOS memory in a similar manner to the assembly test and riscv-isa tests.
 
-To run the echo test, run
+% To run the echo test, run
 
-\begin{minted}{bash}
+% \begin{minted}{bash}
 
-# with iverilog
-make iverilog-sim tb=echo_testbench
+% # with iverilog
+% make iverilog-sim tb=echo_testbench
 
-# with Vivado
-make sim tb=echo_testbench
-\end{minted}
+% # with Vivado
+% make sim tb=echo_testbench
+% \end{minted}
 
-The testbench, acts like a host, sends multiple characters via the serial line, then waits until it receives all the characters back. In some sense, it is similar to the echo test in Lab 5, however, the UART modules are controlled by the software program (\verb|software/echo/echo.c|) running on your RISC-V CPU.
+% The testbench, acts like a host, sends multiple characters via the serial line, then waits until it receives all the characters back. In some sense, it is similar to the echo test in Lab 5, however, the UART modules are controlled by the software program (\verb|software/echo/echo.c|) running on your RISC-V CPU.
 
-Once you pass the echo test, also try \verb|software/c_test/c_test.c|. This test combines both UART operations and string comparison. It covers the basic functionality of the BIOS program, but is shorter and easier to debug than the BIOS testbench.
+% Once you pass the echo test, also try \verb|software/c_test/c_test.c|. This test combines both UART operations and string comparison. It covers the basic functionality of the BIOS program, but is shorter and easier to debug than the BIOS testbench.
 
-\begin{minted}{bash}
+% \begin{minted}{bash}
 
-# with iverilog
-make iverilog-sim tb=c_testbench
+% # with iverilog
+% make iverilog-sim tb=c_testbench
 
-# with Vivado
-make sim tb=c_testbench
-\end{minted}
+% # with Vivado
+% make sim tb=c_testbench
+% \end{minted}
 
-\subsection{BIOS and Programming your CPU}
-\label{bios_info}
+% \subsection{BIOS and Programming your CPU}
+% \label{bios_info}
 
-We have provided a BIOS program in \verb|software/bios151v3| that allows you to interact with your CPU and download other programs over UART.
-The BIOS is just an infinite loop that reads from the UART, checks if the input string matches a known control sequence, and then performs an associated action.
-For detailed information on the BIOS, see Appendix \ref{sec:biosinfo}.
+% We have provided a BIOS program in \verb|software/bios151v3| that allows you to interact with your CPU and download other programs over UART.
+% The BIOS is just an infinite loop that reads from the UART, checks if the input string matches a known control sequence, and then performs an associated action.
+% For detailed information on the BIOS, see Appendix \ref{sec:biosinfo}.
 
-Before running the BIOS program on your FPGA, please do the final simulation test with the \verb|sim/bios_testbench.v|. The testbench emulates the interaction between the host and your CPU via the serial lines orchestrated by the BIOS program. It tests four basic functions of the BIOS program: sending invalid command, storing to an address (in \texttt{IMem} or \texttt{DMem}), loading from an address (in \texttt{IMem} or \texttt{DMem}), and jumping to an address (from BIOS to IMem).
+% Before running the BIOS program on your FPGA, please do the final simulation test with the \verb|sim/bios_testbench.v|. The testbench emulates the interaction between the host and your CPU via the serial lines orchestrated by the BIOS program. It tests four basic functions of the BIOS program: sending invalid command, storing to an address (in \texttt{IMem} or \texttt{DMem}), loading from an address (in \texttt{IMem} or \texttt{DMem}), and jumping to an address (from BIOS to IMem).
 
-\begin{minted}{bash}
+% \begin{minted}{bash}
 
-# with iverilog
-make iverilog-sim tb=bios_testbench
+% # with iverilog
+% make iverilog-sim tb=bios_testbench
 
-# with Vivado
-make sim tb=bios_testbench
-\end{minted}
+% # with Vivado
+% make sim tb=bios_testbench
+% \end{minted}
 
-Once you pass the BIOS testbench, you can implement and test your processor on the FPGA!
+% Once you pass the BIOS testbench, you can implement and test your processor on the FPGA!
 
-To run the BIOS:
-\begin{enumerate}
-  \item Verify that the stack pointer and .text segment offset are set properly in \verb|start.s| and \verb|bios151v3.ld| in software/bios151v3 directory
-  \item Build a bitstream and program the FPGA. Run \verb|make write-bitstream| in \verb|hardware| to generate a bitstream to your project, then \verb|make program-fpga bs=bitstream_files/z1top.bit| to program the FPGA (if you are programming the FPGA from a lab machine with the Hardware Server, make sure that you update the port number in \verb|hardware/scripts/program_fpga.tcl| to your assigned port number).
-  \item Use screen to access the serial port:
-    \begin{minted}[tabsize=2]{bash}
-    screen $SERIALTTY 115200
-    # or 
-    # screen /dev/ttyUSB0 115200
-    \end{minted}
-  \item Press the reset button to make the CPU PC go to the start of BIOS memory
-\end{enumerate}
+% To run the BIOS:
+% \begin{enumerate}
+%   \item Verify that the stack pointer and .text segment offset are set properly in \verb|start.s| and \verb|bios151v3.ld| in software/bios151v3 directory
+%   \item Build a bitstream and program the FPGA. Run \verb|make write-bitstream| in \verb|hardware| to generate a bitstream to your project, then \verb|make program-fpga bs=bitstream_files/z1top.bit| to program the FPGA (if you are programming the FPGA from a lab machine with the Hardware Server, make sure that you update the port number in \verb|hardware/scripts/program_fpga.tcl| to your assigned port number).
+%   \item Use screen to access the serial port:
+%     \begin{minted}[tabsize=2]{bash}
+%     screen $SERIALTTY 115200
+%     # or 
+%     # screen /dev/ttyUSB0 115200
+%     \end{minted}
+%   \item Press the reset button to make the CPU PC go to the start of BIOS memory
+% \end{enumerate}
 
-Close screen using \verb|Ctrl-a Shift-k|, or other students won't be able to use the serial port!
-If you can't access the serial port you can run \verb|killscreen| to kill all screen sessions.
+% Close screen using \verb|Ctrl-a Shift-k|, or other students won't be able to use the serial port!
+% If you can't access the serial port you can run \verb|killscreen| to kill all screen sessions.
 
-If all goes well, you should see a \verb|151 >| prompt after pressing return. The following commands are available:
-\begin{itemize}
-    \item \verb|jal <address>|: Jump to address (hex).
-    \item \verb|sw, sb, sh <data> <address>|: Store data (hex) to address (hex).
-    \item \verb|lw, lbu, lhu <address>|: Prints the data at the address (hex).
-\end{itemize}
+% If all goes well, you should see a \verb|151 >| prompt after pressing return. The following commands are available:
+% \begin{itemize}
+%     \item \verb|jal <address>|: Jump to address (hex).
+%     \item \verb|sw, sb, sh <data> <address>|: Store data (hex) to address (hex).
+%     \item \verb|lw, lbu, lhu <address>|: Prints the data at the address (hex).
+% \end{itemize}
 
-(if you want to backspace, press \verb|Ctrl + Backspace|)
+% (if you want to backspace, press \verb|Ctrl + Backspace|)
 
-As an example, running \verb|sw cafef00d 10000000| should write to the data memory and running \verb|lw 10000000| should print the output \verb|10000000: cafef00d|.
-Please also pay attention that writes to the instruction memory (\verb|sw ffffffff 20000000|) do not write to the data memory, i.e. \verb|lw 10000000| still should yield \verb|cafef00d|.
+% As an example, running \verb|sw cafef00d 10000000| should write to the data memory and running \verb|lw 10000000| should print the output \verb|10000000: cafef00d|.
+% Please also pay attention that writes to the instruction memory (\verb|sw ffffffff 20000000|) do not write to the data memory, i.e. \verb|lw 10000000| still should yield \verb|cafef00d|.
 
-In addition to the command interface, the BIOS allows you to load programs to the CPU. \textit{With screen closed}, run:
-\begin{minted}[tabsize=2]{bash}
-    scripts/hex_to_serial <mif_file> <address>
-\end{minted}
+% In addition to the command interface, the BIOS allows you to load programs to the CPU. \textit{With screen closed}, run:
+% \begin{minted}[tabsize=2]{bash}
+%     scripts/hex_to_serial <mif_file> <address>
+% \end{minted}
 
-This stores the \verb|.mif| file at the specified hex address.
-In order to write into both the data and instruction memories, \textbf{remember to set the top nibble to 0x3}
+% This stores the \verb|.mif| file at the specified hex address.
+% In order to write into both the data and instruction memories, \textbf{remember to set the top nibble to 0x3}
 
-(i.e. \verb|scripts/hex_to_serial echo.mif 30000000|, assuming the \verb|.ld| file sets the base address to \verb|0x10000000|).
+% (i.e. \verb|scripts/hex_to_serial echo.mif 30000000|, assuming the \verb|.ld| file sets the base address to \verb|0x10000000|).
 
-You also need to ensure that the stack and base address are set properly (See Section \ref{toolchain}).
-For example, before making the \verb|mmult| program you should set the set the base address to \verb|0x10000000| (see \ref{mmult}).
-Therefore, when loading the \verb|mmult| program you should load it at the base address: \verb|scripts/hex_to_serial mmult.mif 30000000|.
-Then, you can jump to the loaded \verb|mmult| program in in your screen session by using \verb|jal 10000000|.
+% You also need to ensure that the stack and base address are set properly (See Section \ref{toolchain}).
+% For example, before making the \verb|mmult| program you should set the set the base address to \verb|0x10000000| (see \ref{mmult}).
+% Therefore, when loading the \verb|mmult| program you should load it at the base address: \verb|scripts/hex_to_serial mmult.mif 30000000|.
+% Then, you can jump to the loaded \verb|mmult| program in in your screen session by using \verb|jal 10000000|.
 
-\subsection{Target Clock Frequency}
-By default, the CPU clock frequency is set at 50MHz.
-It should be easy to meet timing at 50 MHz.
-Look at the timing report to see if timing is met.
-If you failed, the timing reports specify the critical path you should optimize.
+% \subsection{Target Clock Frequency}
+% By default, the CPU clock frequency is set at 50MHz.
+% It should be easy to meet timing at 50 MHz.
+% Look at the timing report to see if timing is met.
+% If you failed, the timing reports specify the critical path you should optimize.
 
-For this checkpoint, we will allow you to demonstrate the CPU working at 50 MHz, but for the final checkoff at the end of the semester, you will need to optimize for a higher clock speed ($\geq$ 100MHz) for full credit.
-Details on how to build your FPGA design with a different clock frequency will come later.
+% For this checkpoint, we will allow you to demonstrate the CPU working at 50 MHz, but for the final checkoff at the end of the semester, you will need to optimize for a higher clock speed ($\geq$ 100MHz) for full credit.
+% Details on how to build your FPGA design with a different clock frequency will come later.
 
-\subsection{Matrix Multiply}
-\label{mmult}
-To check the correctness and performance of your processor we have provided a benchmark in \verb|software/mmult/| which performs matrix multiplication.
-You should be able to load it into your processor in the same way as loading the echo program.
+% \subsection{Matrix Multiply}
+% \label{mmult}
+% To check the correctness and performance of your processor we have provided a benchmark in \verb|software/mmult/| which performs matrix multiplication.
+% You should be able to load it into your processor in the same way as loading the echo program.
 
-This program computes $S=AB$, where $A$ and $B$ are 64$\times$64 matrices.
-The program will print a checksum and the counters discussed in Section ~\ref{mmio}.
-The correct checksum is \verb|0001f800|.
-If you do not get this, there is likely a problem in your CPU with one of the instructions that is used by the BIOS but not mmult.
+% This program computes $S=AB$, where $A$ and $B$ are 64$\times$64 matrices.
+% The program will print a checksum and the counters discussed in Section ~\ref{mmio}.
+% The correct checksum is \verb|0001f800|.
+% If you do not get this, there is likely a problem in your CPU with one of the instructions that is used by the BIOS but not mmult.
 
-The matrix multiply program requires that the stack pointer and the offset of the .text segment be set properly, otherwise the program will not execute properly.
+% The matrix multiply program requires that the stack pointer and the offset of the .text segment be set properly, otherwise the program will not execute properly.
 
-The stack pointer (set in \verb|start.s|) should start near the top of DMEM to avoid corrupting the program instructions and data.
-It should be set to \verb|0x1000fff0| and the stack grows downwards.
+% The stack pointer (set in \verb|start.s|) should start near the top of DMEM to avoid corrupting the program instructions and data.
+% It should be set to \verb|0x1000fff0| and the stack grows downwards.
 
-The .text segment offset (set in \verb|mmult.ld|) needs to accommodate the full set of instructions and static data (three 64$\times$64 matrices) in the mmult binary.
-It should be set to the base of DMEM: \verb|0x10000000|.
+% The .text segment offset (set in \verb|mmult.ld|) needs to accommodate the full set of instructions and static data (three 64$\times$64 matrices) in the mmult binary.
+% It should be set to the base of DMEM: \verb|0x10000000|.
 
-The program will also output the values of your instruction and cycle counters (in hex).
-These can be used to calculate the CPI for this program.
-Your target CPI should not be greater than 1.2.
-If your CPI exceeds this value, you will need to modify your datapath and pipeline to reduce the number of bubbles inserted for resolving control hazards (since they are the only source of extra latency in our processor).
-This might involve performing naive branch prediction or moving the jalr address calculation to an earlier stage.
+% The program will also output the values of your instruction and cycle counters (in hex).
+% These can be used to calculate the CPI for this program.
+% Your target CPI should not be greater than 1.2.
+% If your CPI exceeds this value, you will need to modify your datapath and pipeline to reduce the number of bubbles inserted for resolving control hazards (since they are the only source of extra latency in our processor).
+% This might involve performing naive branch prediction or moving the jalr address calculation to an earlier stage.
 
 \subsection{How to Succeed in This Checkpoint}
 Start early and work on your design incrementally.
