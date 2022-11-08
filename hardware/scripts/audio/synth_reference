@@ -1,0 +1,45 @@
+#!/usr/bin/env python
+import argparse
+import math
+import sys
+
+from FixedPoint import FXfamily
+# import matplotlib.pyplot as plt
+
+from models.lut import SineLUT
+from models.nco import NCO
+from models.synth import Synth
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Print reference samples (in binary) for a full synth for comparison with simulation',
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--f-samp', default=60000, type=float, help="Sampling frequency")
+    parser.add_argument('--pa-bits', default=24, type=int, help="Number of bits used for the phase accumulator")
+    parser.add_argument('--num-samples', default=1000, type=int, help="Number of samples")
+    parser.add_argument('--num-entries', default=256, type=int, help="Number of entries in the LUT")
+    parser.add_argument('--num-int-bits', default=4, type=int, help="Number of integer bits (including sign) per LUT entry")
+    parser.add_argument('--num-frac-bits', default=10, type=int, help="Number of fractional bits per LUT entry")
+    args = parser.parse_args()
+
+    if not math.log2(args.num_entries).is_integer():
+        parser.error("Number of LUT entries must be a power of 2, num_entries = {}".format(args.num_entries))
+
+    lut = SineLUT(args.num_entries, FXfamily(n_bits=args.num_frac_bits, n_intbits=args.num_int_bits))
+    carrier_ncos = [NCO([lut], fsamp=args.f_samp, pa_bits=args.pa_bits, interpolate=False) for _ in range(4)]
+    modulator_ncos = [NCO([lut], fsamp=args.f_samp, pa_bits=args.pa_bits, interpolate=False) for _ in range(4)]
+    synth = Synth(carrier_ncos, modulator_ncos, modulator_idx_shift=0, modulator_fcw=0)
+
+    synth.fcws[0] = carrier_ncos[0].freq_to_fcw(440)
+    synth.modulator_fcw = modulator_ncos[0].freq_to_fcw(800)
+    synth.modulator_idx_shift = 8
+    synth.note_enabled[0] = True
+    print("Carrier FCW: {}, Modulator FCW: {}".format(synth.fcws[0], synth.modulator_fcw), file=sys.stderr)
+
+    # synth.fcws[1] = carrier_ncos[1].freq_to_fcw(880)
+    # synth.note_enabled[1] = True
+
+    samples = [synth.next_sample() for _ in range(args.num_samples)]
+    samples_bin_str = [x.toBinaryString().replace('.', '') for x in samples]
+    # plt.plot([x.scaledval for x in samples])
+    # plt.show()
+    print("\n".join(samples_bin_str))

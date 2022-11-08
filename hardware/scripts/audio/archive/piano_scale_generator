@@ -1,0 +1,30 @@
+#!/usr/bin/env python3
+
+import wave
+import random
+import struct
+import sys
+import math
+
+"""
+    This script will generate a text file to be fed into the rom_generator.py script.
+    It will print out the keyboard letter mappings in ASCII to piano notes. The piano notes
+    are stored in terms of tone_switch_periods for a given clock frequency.
+"""
+output_file = sys.argv[1]
+# Can supply custom clock frequency, otherwise defaults to 125 Mhz
+if len(sys.argv) > 2:
+    clock_freq = float(sys.argv[2])
+else:
+    clock_freq = 125.0e6
+
+piano_output_file = open(output_file, 'w')
+for ascii_index in range(256):
+    if chr(ascii_index) in note_map:
+        note_freq = note_map[chr(ascii_index)]
+        note_fcw = (note_freq / (125e6 / 1024)) * (2**24)
+        piano_output_file.write(str(int(round(note_fcw))) + "\n")
+    else:
+        piano_output_file.write("0\n")
+
+piano_output_file.close()

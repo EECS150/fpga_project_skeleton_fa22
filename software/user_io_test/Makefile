@@ -1,6 +1,6 @@
 # Master Makefile dependencies
 TARGET := user_io_test
 INCLUDE_LIB := true
-GCC_OPTS += -O2
+GCC_OPTS += -O2 -flto
 
-include ../Makefile.gcc.in
+include ../Makefrag

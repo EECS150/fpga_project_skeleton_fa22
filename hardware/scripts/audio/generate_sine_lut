@@ -1,0 +1,24 @@
+#!/usr/bin/env python
+import argparse
+import math
+import pprint
+
+from FixedPoint import FXfamily
+
+from models.lut import SineLUT
+from models.utils import generate_verilog_rom
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Generate a LUT for an NCO',
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--num-entries', default=256, type=int, help="Number of entries in the LUT")
+    parser.add_argument('--num-int-bits', default=4, type=int, help="Number of integer bits (including sign) per LUT entry")
+    parser.add_argument('--num-frac-bits', default=10, type=int, help="Number of fractional bits per LUT entry")
+    args = parser.parse_args()
+
+    if not math.log2(args.num_entries).is_integer():
+        parser.error("Number of LUT entries must be a power of 2, num_entries = {}".format(args.num_entries))
+    lut = SineLUT(args.num_entries, FXfamily(n_bits=args.num_frac_bits, n_intbits=args.num_int_bits))
+    # print(lut.binary_entries())
+    # pprint.pprint([(float(x), x.toBinaryString()) for x in lut.data])
+    print(generate_verilog_rom(lut.data, "sine_lut"))

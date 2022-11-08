@@ -1,0 +1,114 @@
+#!/usr/bin/env python3
+
+import os
+import serial
+import time
+from enum import IntEnum
+
+from models.utils import note_map
+
+from tkinter import *
+import tkinter as tk
+from tkinter import ttk
+
+if __name__ == "__main__":
+    if os.name == 'nt':
+        print('Windows machine!')
+        ser = serial.Serial()
+        ser.baudrate = 115200
+        ser.port = 'COM11'  # CHANGE THIS COM PORT
+        ser.open()
+    else:
+        print('Not windows machine!')
+        ser = serial.Serial('/dev/ttyUSB0')
+        ser.baudrate = 115200
+
+    class Command(IntEnum):
+        SET_MOD_FCW = 1
+        SET_MOD_SHIFT = 2
+        START_PLAY = 3
+        STOP_PLAY = 4
+        SET_SYNTH_SHIFT = 5
+        RESET = 6
+
+    def cmd(command: Command, args: bytearray):
+        # Write the command code
+        ser.write(bytearray([int(command)]))
+        time.sleep(0.001)
+        # Write the argument from lowest byte to next
+        for b in args:
+            ser.write(bytearray([b]))
+            time.sleep(0.001)
+        time.sleep(0.002)
+
+    def fcw_to_bytearray(fcw: int) -> bytearray:
+        bytes = []
+        for byte_idx in range(3):
+            mask = 0xFF << (8 * byte_idx)
+            fcw_byte = (fcw & mask) >> (8 * byte_idx)
+            bytes.append(fcw_byte)
+        return bytearray(bytes)
+
+    def freq_to_fcw(freq: float, fsamp: int = 60000, pa_bits: int = 24) -> int:
+        return int(round((freq / fsamp) * 2**pa_bits))
+
+    cmd(Command.RESET, bytearray([]))
+    cmd(Command.SET_MOD_SHIFT, bytearray([0]))
+    cmd(Command.SET_MOD_FCW, fcw_to_bytearray(freq_to_fcw(0)))
+
+    cmd(Command.START_PLAY, fcw_to_bytearray(freq_to_fcw(440)))
+    time.sleep(0.1)
+    cmd(Command.START_PLAY, fcw_to_bytearray(freq_to_fcw(220)))
+    time.sleep(0.1)
+    cmd(Command.START_PLAY, fcw_to_bytearray(freq_to_fcw(110)))
+    time.sleep(0.1)
+    cmd(Command.STOP_PLAY, fcw_to_bytearray(freq_to_fcw(110)))
+
+    os.system('xset r off')  # see https://stackoverflow.com/questions/27215326/tkinter-keypress-keyrelease-events
+
+    def keyup(e):
+        char = chr(e.keysym_num)
+        if char in note_map:
+            cmd(Command.STOP_PLAY, fcw_to_bytearray(freq_to_fcw(note_map[char])))
+
+    def keydown(e):
+        char = chr(e.keysym_num)
+        if char in note_map:
+            cmd(Command.START_PLAY, fcw_to_bytearray(freq_to_fcw(note_map[char])))
+
+    def change_mod_fcw(val):
+        if int(val) == 0:
+            freq = 0
+        else:
+            freq = int(round(10**(int(val) / 1000)))
+        cmd(Command.SET_MOD_FCW, fcw_to_bytearray(freq_to_fcw(freq)))
+        mod_fcw_freq["text"] = "Modulator Frequency (Hz): {}".format(freq)
+
+    def change_mod_shift(val):
+        cmd(Command.SET_MOD_SHIFT, bytearray([int(val)]))
+
+    root = Tk()
+    frm = tk.Frame(root)
+    frm.grid()
+    frm.bind("<KeyPress>", keydown)
+    frm.bind("<KeyRelease>", keyup)
+    tk.Label(frm, text="FM Synth").grid(column=0, row=0)
+    mod_fcw = tk.Scale(frm, from_=0, to=4500, length=1000, tickinterval=1000, label="Modulator Freq (Log scale)", orient=HORIZONTAL, command=change_mod_fcw)
+    mod_fcw.grid(column=0, row=1)
+    mod_fcw.set(0)
+
+    mod_fcw_freq = tk.Label(frm, text="")
+    mod_fcw_freq.grid(column=0, row=2)
+
+    mod_shift = tk.Scale(frm, from_=0, to=10, length=600, tickinterval=1, label="Modulator Shift", orient=HORIZONTAL, command=change_mod_shift)
+    mod_shift.grid(column=0, row=3)
+    mod_shift.set(0)
+
+    tk.Label(frm, text="Type in this window to play notes").grid(column=0, row=4)
+
+    tk.Button(frm, text="Quit", command=root.destroy).grid(column=0, row=5)
+    frm.pack()
+    frm.focus_set()
+    root.mainloop()
+
+    os.system('xset r on')

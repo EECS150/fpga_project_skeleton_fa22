@@ -1,0 +1,47 @@
+#!/usr/bin/env python3
+import wave
+import argparse
+import struct
+# import matplotlib.pyplot as plt
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description='Convert a text file of binary samples to an audio file',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--f-samp', default=60000, type=float, help="Sampling frequency")
+    # parser.add_argument('--num-int-bits', default=9, type=int, help="Number of integer bits (including sign) for each sample")
+    # parser.add_argument('--num-frac-bits', default=3, type=int, help="Number of fractional bits for each sample")
+    parser.add_argument('input_file', type=str, help="Input .txt file path")
+    parser.add_argument('output_file', default="output.wav", type=str, help="Output .wav file path")
+    args = parser.parse_args()
+
+    def renormalize(n, range1, range2):
+        delta1 = range1[1] - range1[0]
+        delta2 = range2[1] - range2[0]
+        return (delta2 * (n - range1[0]) / delta1) + range2[0]
+
+    def bin_str_to_sint(bin_str: str) -> int:
+        # extend binary string to 32 bits
+        bin_str = bin_str + '0' * (32 - len(bin_str))
+        # interpret as unsigned 32-bit integer
+        unsigned_bytes = struct.pack("I", int(bin_str, 2))
+        # cast to signed 32-bit value
+        return struct.unpack("i", unsigned_bytes)[0]
+
+    with open(args.input_file, 'r') as samples_file:
+        samples_bin_str = [line.rstrip('\n') for line in samples_file]
+        # assert all(len(x) == args.num_int_bits + args.num_frac_bits for x in samples_bin_str)
+
+        samples = [bin_str_to_sint(x) for x in samples_bin_str]
+        # print(min(samples), max(samples))
+        # plt.plot(samples_scaled)
+        # plt.show()
+
+        samples_scaled = [renormalize(s, (-2**31, 2**31-1), (-2**15, 2**15-1)) for s in samples]
+        samples_packed = [struct.pack('<h', int(v)) for v in samples_scaled]
+
+        output_wav = wave.open(args.output_file, 'w')
+        # nchannels (1 = mono), sampwidth (2 bytes per sample), framerate (~ 122 kHz), nframes (0)
+        output_wav.setparams((1, 2, args.f_samp, 0, 'NONE', 'not compressed'))
+        output_wav.writeframes(b''.join(samples_packed))
+        output_wav.close()

@@ -1,6 +1,7 @@
 #include "benchmark.h"
 #include "ascii.h"
 #include "uart.h"
+#include "memory_map.h"
 
 #define BUF_LEN 128
 
