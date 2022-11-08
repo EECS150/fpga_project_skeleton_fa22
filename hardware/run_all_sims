@@ -132,11 +132,6 @@ def main():
         silent_remove_factory("bios_tb", args.simulator),
         lambda stdout: "BIOS testbench done! Num failed tests:          0" in stdout,
     )
-    run_bench(
-        f"sim/synth_top_tb.{waveform_suffix}",
-        silent_remove_factory("synth_top_tb", args.simulator),
-        lambda stdout: "failed" not in stdout,
-    )
     print("All tests passed!")
 
 
