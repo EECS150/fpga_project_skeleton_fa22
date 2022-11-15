@@ -10,7 +10,7 @@ Predictions are updated via a 2-bit saturating counter.
 
 module branch_predictor #(
     parameter PC_WIDTH=32,
-    parameter LINES=64
+    parameter LINES=128
 ) (
     input clk,
     input reset,
