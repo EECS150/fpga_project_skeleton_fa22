@@ -10,9 +10,10 @@ module sat_updn #(
     input up,
     input dn,
 
-    output reg [WIDTH-1:0] out
+    output [WIDTH-1:0] out
 );
 
     // TODO: Your code
+    assign out = '0;
 
 endmodule
