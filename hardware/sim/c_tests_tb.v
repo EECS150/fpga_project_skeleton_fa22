@@ -16,12 +16,15 @@ module c_tests_tb();
   initial clk = 0;
   always #(CPU_CLOCK_PERIOD/2) clk = ~clk;
 
+  reg bp_enable = 1'b0;
+
   cpu # (
     .CPU_CLOCK_FREQ(CPU_CLOCK_FREQ),
     .RESET_PC(32'h1000_0000)
   ) cpu (
     .clk(clk),
     .rst(rst),
+    .bp_enable(bp_enable),
     .serial_in(1'b1), // input
     .serial_out()     // output
   );

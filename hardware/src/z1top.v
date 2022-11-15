@@ -13,8 +13,7 @@ module z1top #(
     parameter integer B_PULSE_CNT_MAX = 0.100 / 0.0005,
     /* lint_on */
     // The PC the RISC-V CPU should start at after reset
-    parameter RESET_PC = 32'h4000_0000,
-    parameter N_VOICES = 1
+    parameter RESET_PC = 32'h4000_0000
 ) (
     input CLK_125MHZ_FPGA,
     input [3:0] BUTTONS,
@@ -30,6 +29,9 @@ module z1top #(
 
     // Buttons after the button_parser
     wire [3:0] buttons_pressed;
+
+    // Switches after the synchronizer
+    wire [1:0] switches_sync;
 
     // Reset the CPU and all components on the cpu_clk if the reset button is
     // pushed or whenever the CPU clock PLL isn't locked
@@ -84,6 +86,14 @@ module z1top #(
         .out(buttons_pressed)
     );
 
+    synchronizer #(
+        .WIDTH(2)
+    ) switch_synchronizer (
+        .clk(cpu_clk),
+        .async_signal(SWITCHES),
+        .sync_signal(switches_sync)
+    );
+
     cpu #(
         .CPU_CLOCK_FREQ(CPU_CLOCK_FREQ),
         .RESET_PC(RESET_PC),
@@ -91,6 +101,7 @@ module z1top #(
     ) cpu (
         .clk(cpu_clk),
         .rst(cpu_reset),
+        .bp_enable(switches_sync[0]),
         .serial_out(cpu_tx),
         .serial_in(cpu_rx)
     );
