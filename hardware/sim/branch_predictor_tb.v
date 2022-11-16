@@ -107,12 +107,12 @@ module branch_predictor_tb();
         repeat (5) @(negedge clk);
 
         for (i = 0; i < 2 * LINES; i = i + 1)
-            test_basic(i);
+            test_basic(i << 2);
         
         $display("Testing branch prediction caching");
         for (i = 0; i < LINES; i = i + 1) begin
-            test_pred(i, 1, 0);          // On cache miss, should predict not taken
-            test_pred(i + LINES, 1, 1);  // On cache hit, should predict the currently stored value (taken)
+            test_pred(i << 2, 1, 0);            // On cache miss, should predict not taken
+            test_pred((i + LINES) << 2, 1, 1);  // On cache hit, should predict the currently stored value (taken)
         end
 
         if (num_tests_failed > 0) $error("%d tests failed", num_tests_failed);
