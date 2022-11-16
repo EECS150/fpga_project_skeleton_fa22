@@ -5,6 +5,7 @@ module cpu #(
 ) (
     input clk,
     input rst,
+    input bp_enable,
     input serial_in,
     output serial_out
 );

@@ -35,6 +35,7 @@ module cpu_tb();
   initial clk = 0;
   always #(CPU_CLOCK_PERIOD/2) clk = ~clk;
   wire [31:0] csr;
+  reg bp_enable = 1'b0;
 
   // Init PC with 32'h1000_0000 -- address space of IMem
   // When PC is in IMem's address space, IMem is read-only
@@ -45,6 +46,7 @@ module cpu_tb();
   ) cpu (
     .clk(clk),
     .rst(rst),
+    .bp_enable(bp_enable),
     .serial_in(1'b1),
     .serial_out()
   );

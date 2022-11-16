@@ -18,6 +18,7 @@ module echo_tb();
 
   reg  serial_in;
   wire serial_out;
+  reg bp_enable = 1'b0;
 
   cpu # (
     .CPU_CLOCK_FREQ(CPU_CLOCK_FREQ),
@@ -26,6 +27,7 @@ module echo_tb();
   ) cpu (
     .clk(clk),
     .rst(rst),
+    .bp_enable(bp_enable),
     .serial_in(serial_in),   // input
     .serial_out(serial_out)  // output
   );
