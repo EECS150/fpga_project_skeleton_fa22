@@ -10,7 +10,9 @@ Please see ***[/spec/EECS151_FPGA_Project_Fa22.pdf](https://github.com/EECS150/f
 
 **Checkpoint 2:** Fully functional 3-stage RISC-V (rv32ui) Processor
 
-**Checkpoint 3:** Processor Optimization
+**Checkpoint 3:** Branch Predictor using Branch History Table
+
+**Checkpoint 4:** Processor Optimization
 
 
 ## Resources:
