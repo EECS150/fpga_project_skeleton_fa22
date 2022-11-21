@@ -112,9 +112,6 @@ int main(void) {
 
             volatile uint8_t* p = (volatile uint8_t*)(address);
             *p = byte;
-        } else if (strcmp(input, "led") == 0) {
-            uint32_t toggle_array = ascii_hex_to_uint32(read_token(buffer, BUFFER_LEN, " \x0d"));
-            LED_CONTROL = toggle_array;
         } else {
             uwrite_int8s("\n\rUnrecognized token: ");
             uwrite_int8s(input);
