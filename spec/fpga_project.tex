@@ -1545,13 +1545,13 @@ To do so, we need to build the branch predictor that can
 
 One way to build such a system is by building a \textbf{cache} whose entries that is represented by a \textbf{saturating counter}. 
 
-\textbf{2-bit Saturating Counter} is a state machine that correspond to a particular branch instruction (based on its address) to show whether the branch was recently taken or not. We can use that information to make a prediction as past is usually a good indicator of the future. We increment the counter on branch taken and decrement it on branch not taken. Instead of a single bit that represents taken or not taken recently, we make it more robust by using two bits so we change the prediction after two consecutive mispredictions. We can take the top bit as the prediction. 
+\textbf{2-bit Saturating Counter} is a state machine that correspond to a particular branch instruction (based on its address) to show whether the branch was recently taken or not. We can use that information to make a prediction as past is usually a good indicator of the future. We increment the counter on branch taken and decrement it on branch not taken. Instead of a single bit that represents taken or not taken recently, we make it more robust by using two bits and less sensitive to anomaly branch behaviors. We can take the top bit as the prediction. For example, if the branch behavior is mostly not taken and the state is currently in strong not taken, even the branch is taken once, it will still be weakly not taken and prediction remains not taken. 
 
 \begin{figure}[hbt]
 \begin{center}
-\includegraphics[width=0.5\textwidth]{images/saturating_counter.png}
+\includegraphics[width=0.9\textwidth]{images/saturating_counter.png}
 
-\caption{State Machine for a Saturating Counter. Source: CS152}
+\caption{State Machine for 2-bit Saturating Counter.}
 \end{center}
 \end{figure}
 
@@ -1774,7 +1774,7 @@ Teams that have completed the base set of requirements are eligible to receive e
 The following are suggested projects that may or may not be feasible in one week.
 \begin{itemize}
   \item Improve Branch Predictor: Beyond our 2-bit saturating based BHT, you can improve the Branch Predictor from Checkpoint 3. You can come up with improved scheme, such as incorporating making the cache set associative (required for 251A students), incorporating global history, adding a Branch Target Buffer, etc. Whatever you choose to do, you must improve your CPI from checkpoint 3 to qualify for extra credit.
-  \item 5-Stage Pipeline: Add more pipeline stages and push the clock frequency past 100MHz
+  \item 5-Stage Pipeline: Add more pipeline stages and push the clock frequency past 100MHz. Note that on some deeper pipelines, the \texttt{host\_to\_fpga} task does not wait enough clock cycles for the CPU to process a character before sending the next character over uart. You may want to bump up the wait cycles, e.g., 500 cycles, to avoid this (though it does slow down the testbench).
   \item RISC-V M Extension: Extend the processor with a hardware multiplier and divider
   \item Everything 100MHz or beyond: Push the frequency of the full \verb|z1top| to 100MHz or better.
 \end{itemize}
