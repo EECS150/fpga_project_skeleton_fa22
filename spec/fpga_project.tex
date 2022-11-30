@@ -1610,7 +1610,6 @@ Please pull the skeleton again before starting this checkpoint. We have added sk
 
 Checkpoint 4 is an optimization checkpoint lumped with the final checkoff.
 This part of the project is designed to give students freedom to implement the optimizations of their choosing to improve the performance of their processor.
-\textbf{251 students must implement branch prediction (details listed in section 4).}
 
 The optimization goal for this project is to minimize the \textbf{execution time} on the \verb|mmult| program, as defined by the 'Iron Law' of Processor Performance.
 
@@ -1622,57 +1621,86 @@ The number of instructions is fixed, but you have freedom to change the CPI and 
 Often you will find that you will have to sacrifice CPI to achieve a higher clock frequency, but there also will exist opportunities to improve one or both of the variables without compromises.
 
 \subsection{Grading on Optimization: Frequency vs. CPI}
-The bare minimum is that you should improve the achievable frequency of your existing implementation since Checkpoint 2.
-
-You must demonstrate that your processor has a working BIOS, can load and execute \textbf{mmult} (CPI does not need to be less than 1.2).
+You must demonstrate that your processor has a working BIOS and can load and execute \textbf{mmult}.
 
 Full credit will be awarded if you're able to evaluate different design trade-off points (at least three) between frequency and CPI of \textbf{mmult} (especially if you have implemented some interesting optimization for CPI and increase the frequency further would degrade the performance instead of helping).
 
-Also note that your final optimized design does not need to be strictly three-stage pipeline. Extra credit will be awarded based on additional optimizations listed in the extra credit section, please check with a GSI ahead of time if you are expanding to include these. If you have other ideas please check with a GSI to see if it can be awarded extra credit.
+When exploring design trade-offs, also consider the total FPGA resource utilization. You should note the number of LUTs, Block RAMs, FFs, and DSP Blocks that you use for each design point. You can find these numbers in \verb|hardware/build/impl/post_place_utilization.rpt|.
 
-A \textbf{very minor} component of the optimization grade is based total FPGA resource utilization, with the best designs using as few resources as possible.
-Credit for your area optimizations will be calculated using a cost function.
-At a high level, the cost function will look like:
-\begin{equation*}
-\mathrm{Cost}=\mathrm{C_{LUT}} \times \text{\# of LUTs} + \mathrm{C_{BRAM}} \times \text{\# of Block RAMs} + \mathrm{C_{FF}} \times \text{\# of FFs} + \mathrm{C_{DSP}} \times \text{\# of DSP Blocks}
-\end{equation*}
-where $\mathrm{C_{LUT}}$, $\mathrm{C_{BRAM}}$, $\mathrm{C_{FF}}$, and $\mathrm{C_{DSP}}$ are constant value weights that will be decided upon based on how much each resource that you use should cost. As part of your final grade we will evaluate the cost of your design based on this metric. Keep in mind that cost is only one very small component of your project grade. Correct functionality is far more important.
+Also note that your final optimized design does not need to be strictly three-stage pipeline. Extra credit will be awarded based on additional optimizations listed in the extra credit section, please check with a GSI ahead of time if you are expanding to include these. If you have other ideas please check with a GSI to see if it can be awarded extra credit.
 
 \subsection{Clock Generation Info + Changing Clock Frequency}
 Open up \verb|z1top.v|.
 There's top level input called \verb|CLK_125MHZ_FPGA|.
 It's a 125 MHz clock signal, which is used to derive the CPU clock.
 
-Scrolling down, there's an instantiation of \verb|clock_wizard| generated from Vivado, which is a wrapper module of PLL (phase locked loop) primitive on the FPGA.
-This is a circuit that can create a new clock from an existing clock with a user-specified multiply-divide ratio.
+Scrolling down, there's an instantiation of \verb|clocks| (\verb|clocks.v|), which is a wrapper module of PLL (phase locked loop) primitives on the FPGA. This is a circuit that can create a new clock from an existing clock with a user-specified multiply-divide ratio.
 
-The \verb|clk_in1| input clock of the PLL is driven by the 125 MHz \verb|CLK_125MHZ_FPGA|.
-The frequency of \verb|clk_out1| is calculated as:
+The \verb|CLKIN1| (line 47) input clock of the PLL is driven by the 125 MHz \verb|CLK_125MHZ_FPGA|.
+The frequency of \verb|CLKOUT0| (line 39) is calculated as:
 \begin{equation*}
-  \mathtt{clk\_out1}\_f = \mathtt{clk\_in1}\_f \times \frac{\mathtt{CLKFBOUT\_MULT_F}}{\mathtt{DIVCLK\_DIVIDE} \times \mathtt{CLKOUT0\_DIVIDE}}
+  \mathtt{CLKOUT0}\_f = \mathtt{CLKIN1}\_f \times \frac{\mathtt{CPU\_CLK\_CLKFPOUT\_MULT}}{\mathtt{CPU\_CLK\_DIVCLK\_DIVIDE} \times \mathtt{CPU\_CLK\_CLKOUT\_DIVIDE}}
 \end{equation*}
 
-In our case we get:
+Based on the default parameter values, we get the following CPU clock frequency:
 \begin{equation*}
-  \mathtt{clk\_out1}\_f = 125 \text{ MHz} \times \frac{8}{1 \times 20} = 50 \text{ MHz}
+  \mathtt{CLKOUT0}\_f = 125 \text{ MHz} \times \frac{34}{5 \times 17} = 50 \text{ MHz}
 \end{equation*}
 
-You just need to change the local parameter \verb|CPU_CLOCK_PERIOD| in \verb|z1top.v| to set the target clock frequency for your CPU.
+To change the target CPU clock frequency, you must do \textbf{both} of the following:
+
+\begin{enumerate}
+\item Change the parameters (\verb|CPU_CLK_CLKFBOUT_MULT|, \verb|CPU_CLK_DIVCLK_DIVIDE|, 
+
+\verb|CPU_CLK_CLKOUT_DIVIDE|) in z1top according to the table below
+
+\item Change the \verb|CPU_CLOCK_FREQ| parameter in z1top to match the PLL parameters
+
+\end{enumerate}
+
+\begin{table}[hbt]
+  \begin{center}
+    \caption{PLL Settings}
+    \label{mem_map1}
+    \begin{adjustbox}{width=\columnwidth,center}
+    \begin{tabular}{l l l l}
+      \toprule
+      \textbf{Frequency} & \textbf{DIVCLK\_DIVIDE} & \textbf{CLKFBOUT\_MULT} & \textbf{CLKOUT\_DIVIDE}\\
+      \midrule
+      50 MHz & 5 & 34 & 17 \\
+      60 MHz & 5 & 36 & 15 \\
+      65 MHz & 5 & 39 & 15 \\
+      70 MHz & 5 & 42 & 15 \\
+      75 MHz & 5 & 33 & 11 \\
+      80 MHz & 5 & 48 & 15 \\
+      85 MHz & 5 & 34 & 10 \\
+      90 MHz & 5 & 36 & 10 \\
+      95 MHz & 5 & 38 & 10 \\
+      100 MHz & 5	& 36 & 9 \\   
+      \bottomrule
+    \end{tabular}
+    \end{adjustbox}
+  \end{center}
+\end{table}
 
 \subsection{Critical Path Identification}
-After running \verb|make write-bitstream|, timing analysis will be performed to determine the critical path(s) of your design.
-The timing tools will automatically figure out the CPU's clock timing constraint based on \verb|CPU_CLOCK_PERIOD| in \verb|z1top.v|.
+After running \verb|make impl|, timing analysis will be performed to determine the critical path(s) of your design.
+The timing tools will automatically figure out the CPU's clock timing constraint based on the PLL parameters you set in \verb|z1top.v|.
 
 The critical path can be found by looking in
 
-\verb|z1top_proj/z1top_proj.runs/impl_1/z1top_timing_summary_routed.rpt|.
+\verb|hardware/build/impl/post_route_timing_summary.rpt|.
 
-Look for the paths within your CPU.
+Look for the paths within your CPU. There are 2 types of paths: max delay paths (setup) and min delay paths (hold).
 
 For each timing path look for the attribute called ``slack''.
-Slack describes how much extra time the combinational delay of the path has before the rising edge of the receiving clock.
-It is a setup time attribute.
-Positive slack means that this timing path resolves and settles before the rising edge of the clock, and negative slack indicates a setup time violation.
+Slack describes how much extra time the combinational delay of the path has before/after the rising edge of the receiving clock.
+
+For a \textbf{max delay path}, the slack is a \textbf{setup} time attribute.
+Positive slack means that this timing path resolves and settles \textbf{before} the rising edge of the clock, and negative slack indicates a setup time violation.
+
+For a \textbf{min delay path}, the slack is a \textbf{hold} time attribute.
+Positive slack means that this timing path resolves and settles \textbf{after} the rising edge of the clock, and negative slack indicates a hold time violation.
 
 There are some common delay types that you will encounter.
 \verb|LUT| delays are combinational delays through a LUT.
@@ -1680,24 +1708,24 @@ There are some common delay types that you will encounter.
 Notice that your logic paths are usually dominated by routing delay; as you optimize, you should reach the point where the routing and LUT delays are about equal portions of the total path delay.
 
 \subsubsection{Schematic View}
-To visualize the path, you can open the Vivado project \verb|z1top_proj/z1top_proj.xpr|.
-Click \textit{Open Implemented Design} after the implementation to open the Device Floorplan view.
-Navigate (on the Timing pane at the bottom) to \verb|Intra-Clock Paths| $\rightarrow$ \verb|cpu_clk| $\rightarrow$ \verb|Setup|.
-You can double-click any path to see the logic elements along it, or you can right-click and select \verb|Schematic| to see a schematic view of the path.
+To visualize the path, you can open Vivado (\verb|make vivado|), and open a DCP (Design Checkpoint) file (File → Checkpoint → Open). The DCP is in \verb|build/impl/z1top_routed.dcp|.
 
-The paths in post-PAR timing report may be hard to decipher since Vivado does some optimization to move/merge registers and logic across module boundaries.
-You can also use the \href{https://www.xilinx.com/support/answers/54778.html}{\texttt{keep\_hierarchy} attribute} to prevent Vivado from 
+Re-run timing analysis with Reports → Timing → Report Timing Summary. Use the default options and click OK. Navigate (on the bottom left) to Intra-Clock Paths → \verb|cpu_clk| → Setup (or Hold).
+
+You can double-click any path to see the logic elements along it, or you can right-click and select Schematic to see a schematic view of the path.
+
+The paths in post-PAR timing report may be hard to decipher since Vivado does some optimization to move/merge registers and logic across module boundaries. It may help to look at the post-synth DCP in \verb|build/synth/z1top.dcp|. You can also use the \href{https://www.xilinx.com/support/answers/54778.html}{\texttt{keep\_hierarchy} attribute} to prevent Vivado from moving registers and logic across module boundaries (although this may degrade QoR).
 
 \begin{minted}{verilog}
 // in z1top.v
-(* keep_hierarchy="yes" *) Riscv151 #( ) cpu ( );
+(* keep_hierarchy="yes" *) cpu #( ) cpu ( );
 \end{minted}
 
 \subsubsection{Finding Actual Critical Paths}
 When you first check the timing report with a 50 MHz clock, you might not see your 'actual' critical path.
 50 MHz is easy to meet and the tools will only attempt to optimize routing until timing is met, and will then stop.
 
-You should increase the clock frequency slowly and rerun \verb|make write-bitstream| until you fail to meet timing.
+You should increase the clock frequency slowly and rerun \verb|make impl| until you fail to meet timing.
 At this point, the critical paths you see in the report are the 'actual' ones you need to work on.
 
 Don't try to increase the clock speed up all the way to 100 MHz initially, since that will cause the routing tool to give up even before it tried anything.
@@ -1710,7 +1738,7 @@ You should keep a record of all the different optimizations you tried and the ef
 
 There is no limit to what you can do in this section.
 The only restriction is that you have to run the original, unmodified \verb|mmult| program so that the number of instructions remain fixed.
-You can add as many pipeline stages as you want, stall as much or as little as desired, add a branch predictor, or perform any other optimizations.
+You can add as many pipeline stages as you want, stall as much or as little as desired, or perform any other optimizations.
 If you decide to do a more advanced optimization (like a 5 stage pipeline), ask the staff to see if you can use it as extra credit in addition to the optimization.
 
 Keep notes of your architecture modifications in the process of optimization.
