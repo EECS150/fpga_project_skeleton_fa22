@@ -300,8 +300,7 @@ It should be easy to meet timing at 50 MHz.
 Look at the timing report (`build/impl/post_route_timing_summary.rpt`) to see if timing is met.
 If you failed, the timing reports specify the critical path you should optimize.
 
-For this checkpoint, we will allow you to demonstrate the CPU working at 50 MHz, but for the final checkoff at the end of the semester, you will need to optimize for a higher clock speed (> 100MHz) for full credit.
-Details on how to build your FPGA design with a different clock frequency will come later.
+Details on how to build your FPGA design with a different clock frequency are mentioned in the spec.
 
 ## Matrix Multiply
 To check the correctness and performance of your processor we have provided a benchmark in `software/mmult` which performs matrix multiplication.
